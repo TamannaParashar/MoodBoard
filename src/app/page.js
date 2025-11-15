@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from "react"
 import { Camera, X } from "lucide-react"
 import * as faceapi from "face-api.js"
 import Top from "./Components/Top"
+import "./style.css"
 
 const features = [
   {
@@ -38,6 +39,8 @@ export default function Home() {
   const [detectedMood, setDetectedMood] = useState(null)
   const [songs,setSongs] = useState([])
   const [showSongBtn,setShowSongBtn] = useState(false)
+  const [songBar,setSongBar] = useState(false);
+  const [quoteBar,setQuoteBar] = useState(false);
 
   const videoRef = useRef(null)
   const canvasRef = useRef(null)
@@ -121,6 +124,7 @@ const songClick=async()=>{
   const res = await fetch(`/api/spotify?mood=${detectedMood}`);
   const data = await res.json();
   setSongs(data.tracks);
+  setSongBar(true);
 }
 
   return (
@@ -209,7 +213,17 @@ const songClick=async()=>{
                   {/* Mood Recommendations */}
                   {detectedMood && (
                     <div className="mt-4 p-4 bg-white/10 rounded-lg">
-                      <h3 className="text-xl font-bold mb-2">Detected Mood: {detectedMood}</h3>
+                      <h3 className="text-xl font-bold mb-2 text-center" style={{textShadow:'3px 3px 3px gray'}}>Detected Mood: {detectedMood}</h3>
+
+                      {showSongBtn && 
+                      <div className="flex justify-center">
+                        <button onClick={songClick} className="rounded-lg p-3 m-5 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 slide-left">Get Songs</button>
+
+                        <button onClick={songClick} className="rounded-lg p-3 m-5 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 slide-right">Get Quotes</button>
+                        </div>}
+
+                      {songBar &&
+                      <div>
                       <p className="font-semibold">Songs:</p>
                       <ul>
                         {songs.map((song, i) => (
@@ -220,7 +234,11 @@ const songClick=async()=>{
                           </li>
                         ))}
                       </ul>
+                      </div>}
+                      {quoteBar &&
+                      <div>
                       <p className="font-semibold mt-2">Quotes:</p>
+                      </div>}
                     </div>
                   )}
                 </>
@@ -239,9 +257,6 @@ const songClick=async()=>{
             </div>
           )}
         </div>
-        {showSongBtn && <div className="flex justify-center">
-          <button onClick={songClick} className="rounded-lg p-3 m-5 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700">Get songs</button>
-        </div>}
 
         {/* Feature Cards */}
         <div className="max-w-6xl mx-auto w-full">
