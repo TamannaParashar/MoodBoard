@@ -31,41 +31,12 @@ const features = [
   },
 ]
 
-const moodRecommendations = {
-  happy: {
-    songs: ["Happy - Pharrell Williams", "Can't Stop the Feeling - Justin Timberlake"],
-    quotes: ["Happiness depends on ourselves.", "Smile, it’s free therapy!"],
-  },
-  sad: {
-    songs: ["Someone Like You - Adele", "Fix You - Coldplay"],
-    quotes: ["This too shall pass.", "Every storm runs out of rain."],
-  },
-  angry: {
-    songs: ["Break Stuff - Limp Bizkit", "Killing in the Name - Rage Against the Machine"],
-    quotes: ["Stay calm, breathe.", "Anger is temporary, wisdom is forever."],
-  },
-  surprised: {
-    songs: ["Surprise Yourself - Jack Garratt"],
-    quotes: ["Expect the unexpected.", "Life is full of surprises."],
-  },
-  disgusted: {
-    songs: ["No Song, Just Chill"],
-    quotes: ["Sometimes we need to let go of negativity."],
-  },
-  fearful: {
-    songs: ["Fear of the Dark - Iron Maiden"],
-    quotes: ["Courage is resistance to fear.", "Face your fears."],
-  },
-  neutral: {
-    songs: [],
-    quotes: ["Feeling neutral? Enjoy the calm!"],
-  },
-}
-
 export default function Home() {
   const [showWebcam, setShowWebcam] = useState(false)
   const [capturedImage, setCapturedImage] = useState(null)
   const [detectedMood, setDetectedMood] = useState(null)
+  const [songs,setSongs] = useState([])
+  const [showSongBtn,setShowSongBtn] = useState(false)
 
   const videoRef = useRef(null)
   const canvasRef = useRef(null)
@@ -133,6 +104,7 @@ export default function Home() {
       expressions[a] > expressions[b] ? a : b
     );
     setDetectedMood(mood);
+    setShowSongBtn(true);
   }
   const data = await fetch("/api/addDetectedMood",{
     method:"POST",
@@ -143,6 +115,12 @@ export default function Home() {
   console.log(res);
   return res;
 };
+
+const songClick=async()=>{
+  const res = await fetch(`/api/spotify?mood=${detectedMood}`);
+  const data = await res.json();
+  setSongs(data.tracks);
+}
 
   return (
     <main className="min-h-screen bg-black text-white overflow-hidden relative">
@@ -167,6 +145,9 @@ export default function Home() {
               setShowWebcam(!showWebcam)
               setCapturedImage(null)
               setDetectedMood(null)
+              if(showWebcam){
+                setShowSongBtn(false);
+              }
             }}
             className={`w-full px-8 py-4 rounded-xl font-bold text-lg flex items-center justify-center gap-3 transition-all duration-300 ${
               showWebcam
@@ -227,16 +208,15 @@ export default function Home() {
                       <h3 className="text-xl font-bold mb-2">Detected Mood: {detectedMood}</h3>
                       <p className="font-semibold">Songs:</p>
                       <ul>
-                        {moodRecommendations[detectedMood]?.songs.map((song, i) => (
-                          <li key={i}>{song}</li>
+                        {songs.map((song, i) => (
+                          <li key={i}>
+                            <a href={song.url} target="_blank" className="underline hover:text-blue-300">
+                              {song.name} - {song.artist}
+                            </a>
+                          </li>
                         ))}
                       </ul>
                       <p className="font-semibold mt-2">Quotes:</p>
-                      <ul>
-                        {moodRecommendations[detectedMood]?.quotes.map((quote, i) => (
-                          <li key={i}>{quote}</li>
-                        ))}
-                      </ul>
                     </div>
                   )}
                 </>
@@ -255,6 +235,9 @@ export default function Home() {
             </div>
           )}
         </div>
+        {showSongBtn && <div className="flex justify-center">
+          <button onClick={songClick} className="bg-pink-400">Get songs</button>
+        </div>}
 
         {/* Feature Cards */}
         <div className="max-w-6xl mx-auto w-full">
