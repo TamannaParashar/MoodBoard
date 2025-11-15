@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react"
 import { Camera, X } from "lucide-react"
+import * as faceapi from "face-api.js"
 
 const features = [
   {
@@ -30,15 +31,62 @@ const features = [
   },
 ]
 
+const moodRecommendations = {
+  happy: {
+    songs: ["Happy - Pharrell Williams", "Can't Stop the Feeling - Justin Timberlake"],
+    quotes: ["Happiness depends on ourselves.", "Smile, it’s free therapy!"],
+  },
+  sad: {
+    songs: ["Someone Like You - Adele", "Fix You - Coldplay"],
+    quotes: ["This too shall pass.", "Every storm runs out of rain."],
+  },
+  angry: {
+    songs: ["Break Stuff - Limp Bizkit", "Killing in the Name - Rage Against the Machine"],
+    quotes: ["Stay calm, breathe.", "Anger is temporary, wisdom is forever."],
+  },
+  surprised: {
+    songs: ["Surprise Yourself - Jack Garratt"],
+    quotes: ["Expect the unexpected.", "Life is full of surprises."],
+  },
+  disgusted: {
+    songs: ["No Song, Just Chill"],
+    quotes: ["Sometimes we need to let go of negativity."],
+  },
+  fearful: {
+    songs: ["Fear of the Dark - Iron Maiden"],
+    quotes: ["Courage is resistance to fear.", "Face your fears."],
+  },
+  neutral: {
+    songs: [],
+    quotes: ["Feeling neutral? Enjoy the calm!"],
+  },
+}
+
 export default function Home() {
   const [showWebcam, setShowWebcam] = useState(false)
   const [capturedImage, setCapturedImage] = useState(null)
+  const [detectedMood, setDetectedMood] = useState(null)
+
   const videoRef = useRef(null)
   const canvasRef = useRef(null)
 
+  // Load face-api models
+  useEffect(() => {
+    const loadModels = async () => {
+      try {
+        await faceapi.nets.tinyFaceDetector.loadFromUri("/models")
+        await faceapi.nets.faceExpressionNet.loadFromUri("/models")
+        console.log("Face-api models loaded")
+      } catch (error) {
+        console.error("Error loading face-api models", error)
+      }
+    }
+    loadModels()
+  }, [])
+
+  // Start webcam
   useEffect(() => {
     if (!showWebcam) return
-
     const startWebcam = async () => {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ video: true })
@@ -49,7 +97,6 @@ export default function Home() {
         console.error("Webcam error:", err)
       }
     }
-
     startWebcam()
 
     return () => {
@@ -60,90 +107,40 @@ export default function Home() {
     }
   }, [showWebcam])
 
-  useEffect(() => {
-    if (!canvasRef.current) return
+  // Capture image + detect mood
+ const handleCapture = async () => {
+  if (!videoRef.current) return;
 
-    const canvas = canvasRef.current
-    const ctx = canvas.getContext("2d")
-    if (!ctx) return
+  // Capture image for preview
+  const canvas = document.createElement("canvas");
+  canvas.width = videoRef.current.videoWidth;
+  canvas.height = videoRef.current.videoHeight;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return;
 
-    const resizeCanvas = () => {
-      canvas.width = window.innerWidth
-      canvas.height = window.innerHeight
-    }
-    resizeCanvas()
-    window.addEventListener("resize", resizeCanvas)
+  ctx.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
+  setCapturedImage(canvas.toDataURL("image/png"));
 
-    const bars = 60
-    const barData = Array(bars)
-      .fill(0)
-      .map(() => Math.random())
+  // Run face-api detection
+  const detection = await faceapi
+    .detectSingleFace(videoRef.current, new faceapi.TinyFaceDetectorOptions())
+    .withFaceExpressions();
 
-    const animate = () => {
-      ctx.fillStyle = "rgba(0, 0, 0, 0.05)"
-      ctx.fillRect(0, 0, canvas.width, canvas.height)
-
-      const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height)
-      gradient.addColorStop(0, "rgba(88, 28, 135, 0.08)")
-      gradient.addColorStop(0.5, "rgba(236, 72, 153, 0.04)")
-      gradient.addColorStop(1, "rgba(139, 0, 139, 0.08)")
-      ctx.fillStyle = gradient
-      ctx.fillRect(0, 0, canvas.width, canvas.height)
-
-      const barWidth = canvas.width / bars
-      for (let i = 0; i < bars; i++) {
-        barData[i] += (Math.random() - 0.5) * 0.2
-        barData[i] = Math.max(0, Math.min(1, barData[i]))
-
-        const barHeight = barData[i] * canvas.height * 0.6
-        const x = i * barWidth
-        const y = canvas.height - barHeight
-
-        const barGradient = ctx.createLinearGradient(x, y, x, canvas.height)
-        const hue = (i / bars) * 360
-        barGradient.addColorStop(0, `hsl(${hue}, 100%, 60%)`)
-        barGradient.addColorStop(1, `hsl(${hue}, 100%, 40%)`)
-
-        ctx.fillStyle = barGradient
-        ctx.fillRect(x + 2, y, barWidth - 4, barHeight)
-
-        ctx.shadowColor = `hsl(${hue}, 100%, 50%)`
-        ctx.shadowBlur = 10
-      }
-      ctx.shadowColor = "transparent"
-
-      requestAnimationFrame(animate)
-    }
-
-    animate()
-
-    return () => {
-      window.removeEventListener("resize", resizeCanvas)
-    }
-  }, [])
-
-  const handleCapture = () => {
-    if (videoRef.current) {
-      const canvas = document.createElement("canvas")
-      canvas.width = videoRef.current.videoWidth
-      canvas.height = videoRef.current.videoHeight
-      const ctx = canvas.getContext("2d")
-      if (ctx) {
-        ctx.drawImage(videoRef.current, 0, 0)
-        setCapturedImage(canvas.toDataURL("image/png"))
-      }
-    }
+  if (detection) {
+    const expressions = detection.expressions;
+    const mood = Object.keys(expressions).reduce((a, b) =>
+      expressions[a] > expressions[b] ? a : b
+    );
+    setDetectedMood(mood);
+  } else {
+    setDetectedMood("neutral");
   }
+};
 
   return (
     <main className="min-h-screen bg-black text-white overflow-hidden relative">
-      {/* Background Visualizer */}
       <canvas ref={canvasRef} className="fixed inset-0 w-full h-full z-0" />
-
-      {/* Dark overlay */}
       <div className="fixed inset-0 bg-black/50 z-10"></div>
-
-      {/* Content */}
       <div className="relative z-20 min-h-screen flex flex-col p-4 md:p-8">
         {/* Header */}
         <div className="text-center mb-8">
@@ -162,6 +159,7 @@ export default function Home() {
             onClick={() => {
               setShowWebcam(!showWebcam)
               setCapturedImage(null)
+              setDetectedMood(null)
             }}
             className={`w-full px-8 py-4 rounded-xl font-bold text-lg flex items-center justify-center gap-3 transition-all duration-300 ${
               showWebcam
@@ -182,19 +180,23 @@ export default function Home() {
             )}
           </button>
 
-          {/* Webcam Display */}
           {showWebcam && (
             <div className="mt-6 space-y-4">
               {capturedImage ? (
                 <>
                   <img
-                    src={capturedImage || "/placeholder.svg"}
+                    src={capturedImage}
                     alt="Captured"
                     className="w-full rounded-xl shadow-lg max-h-96 object-cover"
                   />
                   <div className="flex gap-3">
                     <button
-                      onClick={() => setCapturedImage(null)}
+                      onClick={() => {
+                        setCapturedImage(null)
+                        setDetectedMood(null)
+                        setShowWebcam(false)
+                        setTimeout(()=>setShowWebcam(true),10);
+                      }}
                       className="flex-1 px-4 py-3 bg-purple-600 hover:bg-purple-700 rounded-lg font-semibold transition-all"
                     >
                       Retake
@@ -211,6 +213,25 @@ export default function Home() {
                       Download
                     </button>
                   </div>
+
+                  {/* Mood Recommendations */}
+                  {detectedMood && (
+                    <div className="mt-4 p-4 bg-white/10 rounded-lg">
+                      <h3 className="text-xl font-bold mb-2">Detected Mood: {detectedMood}</h3>
+                      <p className="font-semibold">Songs:</p>
+                      <ul>
+                        {moodRecommendations[detectedMood]?.songs.map((song, i) => (
+                          <li key={i}>{song}</li>
+                        ))}
+                      </ul>
+                      <p className="font-semibold mt-2">Quotes:</p>
+                      <ul>
+                        {moodRecommendations[detectedMood]?.quotes.map((quote, i) => (
+                          <li key={i}>{quote}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
                 </>
               ) : (
                 <>
@@ -244,7 +265,6 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Footer */}
         <div className="mt-auto text-center text-gray-400 text-sm">
           <p>Ready to understand your mood? Capture and explore.</p>
         </div>
