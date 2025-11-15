@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from "react"
 import { Camera, X } from "lucide-react"
 import * as faceapi from "face-api.js"
+import Top from "./Components/Top"
 
 const features = [
   {
@@ -124,6 +125,9 @@ const songClick=async()=>{
 
   return (
     <main className="min-h-screen bg-black text-white overflow-hidden relative">
+      <div>
+        <Top/>
+      </div>
       <canvas ref={canvasRef} className="fixed inset-0 w-full h-full z-0" />
       <div className="fixed inset-0 bg-black/50 z-10"></div>
       <div className="relative z-20 min-h-screen flex flex-col p-4 md:p-8">
@@ -236,7 +240,7 @@ const songClick=async()=>{
           )}
         </div>
         {showSongBtn && <div className="flex justify-center">
-          <button onClick={songClick} className="bg-pink-400">Get songs</button>
+          <button onClick={songClick} className="rounded-lg p-3 m-5 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700">Get songs</button>
         </div>}
 
         {/* Feature Cards */}
@@ -246,15 +250,20 @@ const songClick=async()=>{
             {features.map((feature, index) => (
               <div
                 key={index}
-                className="backdrop-blur-md bg-white/5 border border-purple-500/30 hover:border-purple-500/60 rounded-xl p-6 transition-all duration-300 hover:bg-white/10 hover:shadow-lg"
+                className="backdrop-blur-md bg-gradient-to-r from-purple-400 via-pink-500 to-red-400 p-5 rounded-lg"
               >
                 <h3 className="text-xl font-bold mb-3">{feature.title}</h3>
-                <p className="text-gray-300 text-sm leading-relaxed">{feature.description}</p>
+                <p className="text-gray-600 text-sm leading-relaxed">{feature.description}</p>
               </div>
             ))}
           </div>
         </div>
       </div>
+      <footer>
+        <div className="text-center">
+          <p>&copy; {new Date().getFullYear()} MoodBoard | All Rights Reserved</p>
+        </div>
+      </footer>
     </main>
   )
 }
