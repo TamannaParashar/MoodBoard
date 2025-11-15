@@ -126,15 +126,22 @@ export default function Home() {
     .detectSingleFace(videoRef.current, new faceapi.TinyFaceDetectorOptions())
     .withFaceExpressions();
 
+  let mood = "neutral";
   if (detection) {
     const expressions = detection.expressions;
-    const mood = Object.keys(expressions).reduce((a, b) =>
+    mood = Object.keys(expressions).reduce((a, b) =>
       expressions[a] > expressions[b] ? a : b
     );
     setDetectedMood(mood);
-  } else {
-    setDetectedMood("neutral");
   }
+  const data = await fetch("/api/addDetectedMood",{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({mood})
+  })
+  const res = await data.json();
+  console.log(res);
+  return res;
 };
 
   return (
@@ -263,10 +270,6 @@ export default function Home() {
               </div>
             ))}
           </div>
-        </div>
-
-        <div className="mt-auto text-center text-gray-400 text-sm">
-          <p>Ready to understand your mood? Capture and explore.</p>
         </div>
       </div>
     </main>
