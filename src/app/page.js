@@ -5,6 +5,7 @@ import { Camera, X } from "lucide-react"
 import * as faceapi from "face-api.js"
 import Top from "./Components/Top"
 import "./style.css"
+import { useRouter } from "next/navigation"
 
 const features = [
   {
@@ -37,13 +38,11 @@ export default function Home() {
   const [showWebcam, setShowWebcam] = useState(false)
   const [capturedImage, setCapturedImage] = useState(null)
   const [detectedMood, setDetectedMood] = useState(null)
-  const [songs,setSongs] = useState([])
   const [showSongBtn,setShowSongBtn] = useState(false)
-  const [songBar,setSongBar] = useState(false);
-  const [quoteBar,setQuoteBar] = useState(false);
 
   const videoRef = useRef(null)
   const canvasRef = useRef(null)
+  const router = useRouter();
 
   // Load face-api models
   useEffect(() => {
@@ -95,7 +94,7 @@ export default function Home() {
 
   ctx.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
   setCapturedImage(canvas.toDataURL("image/png"));
-
+  
   // Run face-api detection
   const detection = await faceapi
     .detectSingleFace(videoRef.current, new faceapi.TinyFaceDetectorOptions())
@@ -121,10 +120,10 @@ export default function Home() {
 };
 
 const songClick=async()=>{
-  const res = await fetch(`/api/spotify?mood=${detectedMood}`);
-  const data = await res.json();
-  setSongs(data.tracks);
-  setSongBar(true);
+  router.push(`/song?mood=${detectedMood}`);
+}
+const quotesClick=async()=>{
+  router.push(`/song?mood=${detectedMood}`);
 }
 
   return (
@@ -219,26 +218,8 @@ const songClick=async()=>{
                       <div className="flex justify-center">
                         <button onClick={songClick} className="rounded-lg p-3 m-5 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 slide-left">Get Songs</button>
 
-                        <button onClick={songClick} className="rounded-lg p-3 m-5 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 slide-right">Get Quotes</button>
+                        <button onClick={quotesClick} className="rounded-lg p-3 m-5 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 slide-right">Get Quotes</button>
                         </div>}
-
-                      {songBar &&
-                      <div>
-                      <p className="font-semibold">Songs:</p>
-                      <ul>
-                        {songs.map((song, i) => (
-                          <li key={i}>
-                            <a href={song.url} target="_blank" className="underline hover:text-blue-300">
-                              {song.name} - {song.artist}
-                            </a>
-                          </li>
-                        ))}
-                      </ul>
-                      </div>}
-                      {quoteBar &&
-                      <div>
-                      <p className="font-semibold mt-2">Quotes:</p>
-                      </div>}
                     </div>
                   )}
                 </>

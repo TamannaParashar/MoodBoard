@@ -2,6 +2,7 @@ import axios from "axios";
 
 export async function GET(req) {
   const mood = req.nextUrl.searchParams.get("mood");
+  const lang = req.nextUrl.searchParams.get("lang")||"english"
   if (!mood) {
     return new Response(JSON.stringify({error:"Mood is required" }),{status: 400,});
   }
@@ -22,8 +23,9 @@ export async function GET(req) {
     const accessToken = tokenResponse.data.access_token;
 
     // 2. Search for tracks based on mood
+    const query = `${mood} ${lang}`;
     const searchResponse = await axios.get(
-      `https://api.spotify.com/v1/search?q=${encodeURIComponent(mood)}&type=track&limit=5`,
+      `https://api.spotify.com/v1/search?q=${encodeURIComponent(query)}&type=track&limit=10`,
       {
         headers: {
           Authorization: `Bearer ${accessToken}`,
@@ -38,6 +40,8 @@ export async function GET(req) {
         artist: track.artists.map((a) => a.name).join(", "),
         url: track.external_urls.spotify,
         album: track.album.name,
+        albumImageUrl: track.album.images[0]?.url || null,
+
       })) || [];
 
     return new Response(JSON.stringify({ tracks }), {
