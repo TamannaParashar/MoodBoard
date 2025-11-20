@@ -123,7 +123,10 @@ const songClick=async()=>{
   router.push(`/song?mood=${detectedMood}`);
 }
 const quotesClick=async()=>{
-  router.push(`/song?mood=${detectedMood}`);
+  router.push(`/quotes?mood=${detectedMood}`);
+}
+const aiInteract=()=>{
+  router.push(`/interact?mood=${detectedMood}`);
 }
 
   return (
@@ -219,6 +222,8 @@ const quotesClick=async()=>{
                         <button onClick={songClick} className="rounded-lg p-3 m-5 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 slide-left">Get Songs</button>
 
                         <button onClick={quotesClick} className="rounded-lg p-3 m-5 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 slide-right">Get Quotes</button>
+
+                        <button onClick={aiInteract} className="rounded-lg p-3 m-5 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 slide-right">Wanna Talk?</button>
                         </div>}
                     </div>
                   )}
