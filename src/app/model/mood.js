@@ -1,6 +1,10 @@
 import '@/app/utils/db'
 import mongoose from "mongoose";
 const detectedMood = new mongoose.Schema({
+    id:{
+        type:Number,
+        required:false
+    },
     mood:{
         type:String,
         required:true
