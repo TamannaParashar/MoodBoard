@@ -10,7 +10,7 @@ import { useRouter } from "next/navigation"
 const features = [
   {
     title: "Capture Your Mood",
-    description: "Take a photo of yourself and let AI understand your emotional state in that moment.",
+    description: "Take a photo of yourself and let AI understand your emotional state at that moment.",
   },
   {
     title: "AI Mood Detection",
@@ -18,15 +18,15 @@ const features = [
   },
   {
     title: "Personalized Recommendations",
-    description: "Get music, quotes, and soundscapes perfectly suited to your detected mood.",
+    description: "Get music, quotes, and mini games perfectly suited to your detected mood.",
   },
   {
     title: "Mood Insights",
     description: "Track patterns in your emotions over time and understand yourself better.",
   },
   {
-    title: "Ambient Soundscapes",
-    description: "Choose from curated ambient sounds to enhance your emotional experience.",
+    title: "Private Talktank",
+    description: "100% privacy, come and express your joys, weak moments, sorrows etc without being judeged.",
   },
   {
     title: "Your Personal Sanctuary",
@@ -39,6 +39,8 @@ export default function Home() {
   const [capturedImage, setCapturedImage] = useState(null)
   const [detectedMood, setDetectedMood] = useState(null)
   const [showSongBtn,setShowSongBtn] = useState(false)
+  const [traceOption, setTraceOption] = useState("dontTrace");
+
 
   const videoRef = useRef(null)
   const canvasRef = useRef(null)
@@ -109,10 +111,24 @@ export default function Home() {
     setDetectedMood(mood);
     setShowSongBtn(true);
   }
+  let idToSend = null;
+  if (traceOption === "trace") {
+    const userInput = prompt(
+      "Enter your unique ID (or leave empty for New User):"
+    );
+
+    if (userInput && userInput.trim() !== "") {
+      idToSend = userInput.trim();
+    } else {
+      idToSend = Math.floor(10000 + Math.random() * 90000);
+      alert(`Your new unique ID is: ${idToSend}`);
+    }
+  }
+  const toSend = idToSend?{mood,id:idToSend}:{mood};
   const data = await fetch("/api/addDetectedMood",{
     method:"POST",
     headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({mood})
+    body:JSON.stringify(toSend)
   })
   const res = await data.json();
   console.log(res);
@@ -145,7 +161,7 @@ const aiInteract=()=>{
               Board
             </span>
           </h1>
-          <p className="text-gray-300 text-lg">Understand your emotions through AI</p>
+          <p className="text-gray-300 text-lg">We Understand You !</p>
         </div>
 
         {/* Webcam Section */}
@@ -180,6 +196,18 @@ const aiInteract=()=>{
 
           {showWebcam && (
             <div className="mt-6 space-y-4">
+              <div className="mb-4">
+                <label className="mr-2 font-semibold">Trace Mood?</label>
+                <select
+                  value={traceOption}
+                  onChange={(e) => setTraceOption(e.target.value)}
+                  className="px-3 py-2 rounded-lg bg-gray-800 text-white"
+                >
+                  <option value="dontTrace">Don't Trace</option>
+                  <option value="trace">Trace</option>
+                </select>
+              </div>
+
               {capturedImage ? (
                 <>
                   <img
