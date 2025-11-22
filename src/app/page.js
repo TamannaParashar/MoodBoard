@@ -124,7 +124,7 @@ export default function Home() {
       alert(`Your new unique ID is: ${idToSend}`);
     }
   }
-  const toSend = idToSend?{mood,id:idToSend}:{mood};
+  const toSend = idToSend?{mood,userId:idToSend}:{mood};
   const data = await fetch("/api/addDetectedMood",{
     method:"POST",
     headers:{"Content-Type":"application/json"},
@@ -252,6 +252,8 @@ const aiInteract=()=>{
                         <button onClick={quotesClick} className="rounded-lg p-3 m-5 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 slide-right">Get Quotes</button>
 
                         <button onClick={aiInteract} className="rounded-lg p-3 m-5 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 slide-right">Wanna Talk?</button>
+
+                        <button onClick={()=>router.push('/analyseMood')} className="rounded-lg p-3 m-5 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 slide-right">Analyse Mood</button>
                         </div>}
                     </div>
                   )}

@@ -1,7 +1,7 @@
 import '@/app/utils/db'
 import mongoose from "mongoose";
 const detectedMood = new mongoose.Schema({
-    id:{
+    userId:{
         type:Number,
         required:false
     },
@@ -10,5 +10,5 @@ const detectedMood = new mongoose.Schema({
         required:true
     }
 })
-const Mood = mongoose.model.Mood || mongoose.model("Mood",detectedMood);
+const Mood = mongoose.models.Mood || mongoose.model("Mood",detectedMood);
 export default Mood;
