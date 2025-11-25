@@ -10,9 +10,9 @@ export default function InteractPage() {
 
   const [conversation, setConversation] = useState([]);
   const [aiSpeaking, setAiSpeaking] = useState(false);
-  const [canSpeak, setCanSpeak] = useState(false); // enable speak button after AI speaks
+  const [canSpeak, setCanSpeak] = useState(false); 
   const [listening, setListening] = useState(false);
-  const [started, setStarted] = useState(false); // user clicked start conversation
+  const [started, setStarted] = useState(false);
 
   const recognitionRef = useRef(null);
   const chatEndRef = useRef(null);
@@ -126,7 +126,7 @@ export default function InteractPage() {
               >
                 <div className="flex">
                   <div className="w-12 h-12 rounded-full overflow-hidden flex-shrink-0 m-5">
-                    <img src={msg.sender==="AI"?"/a.jpg":"/b.png"} alt="no icon found" className="w-full h-full object-cover object-center" />
+                    <img src={msg.sender==="AI"?"/a.jpg":"/b.png"} alt="no icon found" className={`w-full h-full object-cover object-center ${aiSpeaking?"animate-pulse":""}`} />
                   </div>
                 <strong>{msg.sender}:</strong> {msg.text}
                 </div>
