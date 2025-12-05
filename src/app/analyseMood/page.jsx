@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { Doughnut } from "react-chartjs-2"
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from "chart.js"
+import { toast } from "sonner"
 
 ChartJS.register(ArcElement, Tooltip, Legend)
 
@@ -12,10 +13,10 @@ export default function AnalyseMood() {
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
 
-  const fetchMoodData = async () => {
-    setError("")
-    setMoodData(null)
-    setLoading(true)
+const fetchMoodData = async () => {
+  setError("")
+  setMoodData(null)
+  setLoading(true)
 
     if (!userId.trim()) {
       setError("Please enter a valid ID")
@@ -23,7 +24,7 @@ export default function AnalyseMood() {
       return
     }
 
-    try {
+  try {
       const res = await fetch(`/api/getMood?userId=${userId}`)
       const data = await res.json()
 
@@ -33,13 +34,14 @@ export default function AnalyseMood() {
         return
       }
 
-      setMoodData(data.moodCounts)
+      setMoodData(data.moodCounts);
+      toast(`You were ${data.maxMood} for ${data.maxCount} this week. Stay joyful!`);
     } catch {
       setError("Something went wrong")
     } finally {
       setLoading(false)
     }
-  }
+}
 
   const handleKeyPress = (e) => {
     if (e.key === "Enter") {

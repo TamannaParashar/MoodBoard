@@ -8,6 +8,11 @@ const detectedMood = new mongoose.Schema({
     mood:{
         type:String,
         required:true
+    },
+    date:{
+        type:Date,
+        default:Date.now(),
+        required:true
     }
 })
 const Mood = mongoose.models.Mood || mongoose.model("Mood",detectedMood);

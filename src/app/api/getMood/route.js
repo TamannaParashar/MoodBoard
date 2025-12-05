@@ -11,5 +11,20 @@ export async function GET(req){
     data.forEach((r) => {
       moodCounts[r.mood] = (moodCounts[r.mood] || 0) + 1;
     });
-    return new Response(JSON.stringify({moodCounts}),{status:200,headers:{"Content-Type":"application/json"}});
+
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    const lastSevenDaysData = await Mood.find({userId:id,date:{$gt:sevenDaysAgo}});
+    const mood7DayCounts = {};
+    lastSevenDaysData.forEach((r) => {
+        mood7DayCounts[r.mood] = (mood7DayCounts[r.mood] || 0) + 1;
+    });
+    let maxMood = null;
+    let maxCount = 0;
+    for(const [mood,cnt] of Object.entries(mood7DayCounts)){
+      if(cnt > maxCount){
+        maxCount = cnt;
+        maxMood = mood;
+      }
+    }
+    return new Response(JSON.stringify({moodCounts,maxMood,maxCount}),{status:200,headers:{"Content-Type":"application/json"}});
 }
