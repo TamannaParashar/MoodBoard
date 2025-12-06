@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
-import { Camera, X } from "lucide-react"
+import { Camera, X, Star } from "lucide-react"
 import * as faceapi from "face-api.js"
 import Top from "./Components/Top"
 import "./style.css"
@@ -18,19 +18,56 @@ const features = [
   },
   {
     title: "Personalized Recommendations",
-    description: "Get music, quotes, and mini games perfectly suited to your detected mood.",
+    description: "Get music, quotes, AI agent to talk with, relax room, connect with people and many more...",
+  },
+]
+
+const whyMoodboard = [
+  {
+    icon: "🎯",
+    title: "Self-Discovery",
+    description: "Understand your emotional patterns and triggers better over time.",
   },
   {
-    title: "Mood Insights",
-    description: "Track patterns in your emotions over time and understand yourself better.",
+    icon: "🛡️",
+    title: "Complete Privacy",
+    description: "100% private and secure. Your emotions stay between you and MoodBoard.",
   },
   {
-    title: "Private Talktank",
-    description: "100% privacy, come and express your joys, weak moments, sorrows etc without being judeged.",
+    icon: "💡",
+    title: "Smart Insights",
+    description: "Get actionable recommendations tailored to your emotional needs.",
+  },
+]
+
+const reviews = [
+  {
+    name: "Sarah Johnson",
+    role: "Mental Health Advocate",
+    rating: 5,
+    comment: "MoodBoard has transformed how I track and understand my emotions. Absolutely incredible!",
+    avatar: "SJ",
   },
   {
-    title: "Your Personal Sanctuary",
-    description: "A safe, beautiful space to explore your emotions and find inner peace.",
+    name: "Marcus Chen",
+    role: "Wellness Coach",
+    rating: 4.5,
+    comment: "The AI detection is surprisingly accurate. My clients love the personalized recommendations.",
+    avatar: "MC",
+  },
+  {
+    name: "Emma Davis",
+    role: "Therapist",
+    rating: 4.5,
+    comment: "A wonderful tool for emotional awareness. The privacy features are outstanding.",
+    avatar: "ED",
+  },
+  {
+    name: "Alex Rivera",
+    role: "Fitness Trainer",
+    rating: 5,
+    comment: "Best app for understanding my mental state. The music recommendations are spot on!",
+    avatar: "AR",
   },
 ]
 
@@ -135,15 +172,35 @@ export default function Home() {
   return res;
 };
 
-const songClick=async()=>{
-  router.push(`/song?mood=${detectedMood}`);
-}
-const quotesClick=async()=>{
-  router.push(`/quotes?mood=${detectedMood}`);
-}
-const aiInteract=()=>{
-  router.push(`/interact?mood=${detectedMood}`);
-}
+  const songClick=async()=>{
+    router.push(`/song?mood=${detectedMood}`);
+  }
+  const quotesClick=async()=>{
+    router.push(`/quotes?mood=${detectedMood}`);
+  }
+  const aiInteract=()=>{
+    router.push(`/interact?mood=${detectedMood}`);
+  }
+
+  const renderStars = (rating) => {
+      return (
+        <div className="flex gap-1">
+          {[1, 2, 3, 4, 5].map((star) => (
+            <Star
+              key={star}
+              className={`w-4 h-4 ${
+                star <= Math.floor(rating)
+                  ? "fill-yellow-400 text-yellow-400"
+                  : star - rating < 1
+                    ? "fill-yellow-400 text-yellow-400 opacity-50"
+                    : "text-gray-400"
+              }`}
+            />
+          ))}
+        </div>
+      )
+    }
+
 
   return (
     <main className="min-h-screen bg-black text-white overflow-hidden relative">
@@ -194,101 +251,158 @@ const aiInteract=()=>{
             )}
           </button>
 
-          {showWebcam && (
-            <div className="mt-6 space-y-4">
-              <div className="mb-4">
-                <label className="mr-2 font-semibold">Trace Mood?</label>
-                <select
-                  value={traceOption}
-                  onChange={(e) => setTraceOption(e.target.value)}
-                  className="px-3 py-2 rounded-lg bg-gray-800 text-white"
-                >
-                  <option value="dontTrace">Don't Trace</option>
-                  <option value="trace">Trace</option>
-                </select>
-              </div>
+        {showWebcam && (
+          <div className="mt-6 space-y-4">
+            <div className="mb-4">
+              <label className="mr-2 font-semibold">Trace Mood?</label>
+              <select
+                value={traceOption}
+                onChange={(e) => setTraceOption(e.target.value)}
+                className="px-3 py-2 rounded-lg bg-gray-800 text-white"
+              >
+                <option value="dontTrace">Don't Trace</option>
+                <option value="trace">Trace</option>
+              </select>
+            </div>
 
-              {capturedImage ? (
-                <>
-                  <img
-                    src={capturedImage}
-                    alt="Captured"
-                    className="w-full rounded-xl shadow-lg max-h-96 object-cover"
-                  />
-                  <div className="flex gap-3">
-                    <button
-                      onClick={() => {
-                        setCapturedImage(null)
-                        setDetectedMood(null)
-                        setShowWebcam(false)
-                        setTimeout(()=>setShowWebcam(true),10);
-                      }}
-                      className="flex-1 px-4 py-3 bg-purple-600 hover:bg-purple-700 rounded-lg font-semibold transition-all"
-                    >
-                      Retake
-                    </button>
-                    <button
-                      onClick={() => {
-                        const link = document.createElement("a")
-                        link.href = capturedImage
-                        link.download = `mood-${Date.now()}.png`
-                        link.click()
-                      }}
-                      className="flex-1 px-4 py-3 bg-pink-600 hover:bg-pink-700 rounded-lg font-semibold transition-all"
-                    >
-                      Download
-                    </button>
-                  </div>
-
-                  {/* Mood Recommendations */}
-                  {detectedMood && (
-                    <div className="mt-4 p-4 bg-white/10 rounded-lg">
-                      <h3 className="text-xl font-bold mb-2 text-center" style={{textShadow:'3px 3px 3px gray'}}>Detected Mood: {detectedMood}</h3>
-
-                      {showSongBtn && 
-                      <div className="flex justify-center">
-                        <button onClick={songClick} className="rounded-lg p-3 m-5 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 slide-left">Get Songs</button>
-
-                        <button onClick={quotesClick} className="rounded-lg p-3 m-5 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 slide-right">Get Quotes</button>
-
-                        <button onClick={aiInteract} className="rounded-lg p-3 m-5 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 slide-right">Wanna Talk?</button>
-
-                        <button onClick={()=>router.push('/analyseMood')} className="rounded-lg p-3 m-5 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 slide-right">Analyse Mood</button>
-                        </div>}
-                    </div>
-                  )}
-                </>
-              ) : (
-                <>
-                  <video ref={videoRef} autoPlay playsInline className="w-full rounded-xl bg-gray-900" />
+            {capturedImage ? (
+              <>
+                <img
+                  src={capturedImage}
+                  alt="Captured"
+                  className="w-full rounded-xl shadow-lg max-h-96 object-cover"
+                />
+                <div className="flex gap-3">
                   <button
-                    onClick={handleCapture}
-                    className="w-full px-4 py-3 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 rounded-lg font-semibold flex items-center justify-center gap-2 transition-all"
+                    onClick={() => {
+                      setCapturedImage(null)
+                      setDetectedMood(null)
+                      setShowWebcam(false)
+                      setTimeout(()=>setShowWebcam(true),10);
+                    }}
+                    className="flex-1 px-4 py-3 bg-purple-600 hover:bg-purple-700 rounded-lg font-semibold transition-all"
                   >
-                    <Camera className="w-5 h-5" />
-                    Capture Image
+                    Retake
                   </button>
-                </>
+                  <button
+                    onClick={() => {
+                      const link = document.createElement("a")
+                      link.href = capturedImage
+                      link.download = `mood-${Date.now()}.png`
+                      link.click()
+                    }}
+                    className="flex-1 px-4 py-3 bg-pink-600 hover:bg-pink-700 rounded-lg font-semibold transition-all"
+                  >
+                    Download
+                  </button>
+                </div>
+
+                {/* Mood Recommendations */}
+                {detectedMood && (
+                  <div className="mt-4 p-4 bg-white/10 rounded-lg">
+                    <h3 className="text-xl font-bold mb-2 text-center" style={{textShadow:'3px 3px 3px gray'}}>Detected Mood: {detectedMood}</h3>
+
+                    {showSongBtn && 
+                    <div className="flex justify-center">
+                      <button onClick={songClick} className="rounded-lg p-3 m-5 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 slide-left">Get Songs</button>
+
+                      <button onClick={quotesClick} className="rounded-lg p-3 m-5 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 slide-right">Get Quotes</button>
+
+                      <button onClick={aiInteract} className="rounded-lg p-3 m-5 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 slide-right">Wanna Talk?</button>
+
+                      <button onClick={()=>router.push('/analyseMood')} className="rounded-lg p-3 m-5 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 slide-right">Analyse Mood</button>
+                      </div>}
+                  </div>
+                )}
+              </>
+            ) : (
+              <>
+                <video ref={videoRef} autoPlay playsInline className="w-full rounded-xl bg-gray-900" />
+                <button
+                  onClick={handleCapture}
+                  className="w-full px-4 py-3 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 rounded-lg font-semibold flex items-center justify-center gap-2 transition-all"
+                >
+                  <Camera className="w-5 h-5" />
+                  Capture Image
+                </button>
+              </>
+            )}
+          </div>
+        )}
+      </div>
+
+      <div className="relative w-full flex justify-center my-20 overflow-visible">
+        <div className="relative flex flex-col w-full md:w-1/2 items-center space-y-6 z-10 overflow-visible">
+          <img
+            src="/p1.png"
+            className="hidden md:block w-64 absolute -top-28 -left-32 z-20 animate-float"
+            alt="Sticker Top"
+          />
+
+          {/* Feature Cards */}
+          {features.map((feature, index) => (
+            <div
+              key={index}
+              className="relative w-full backdrop-blur-md bg-gradient-to-r from-purple-400 via-pink-500 to-red-400 p-8 rounded-2xl shadow-2xl overflow-visible z-10"
+            >
+              <h3 className="text-xl font-bold mb-3 text-center">{feature.title}</h3>
+              <p className="text-gray-900 text-sm leading-relaxed text-center">
+                {feature.description}
+              </p>
+
+              {/* p2 only on LAST card */}
+              {index === 2 && (
+                <img
+                  src="/p2.png"
+                  className="hidden md:block w-64 absolute -bottom-28 -right-32 z-20 animate-float-delayed"
+                  alt="Sticker Bottom"
+                />
               )}
             </div>
-          )}
+          ))}
         </div>
+      </div>
 
-        {/* Feature Cards */}
-        <div className="max-w-6xl mx-auto w-full">
-          <h2 className="text-3xl font-bold mb-8 text-center">How It Works</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {features.map((feature, index) => (
-              <div
-                key={index}
-                className="backdrop-blur-md bg-gradient-to-r from-purple-400 via-pink-500 to-red-400 p-5 rounded-lg"
-              >
-                <h3 className="text-xl font-bold mb-3">{feature.title}</h3>
-                <p className="text-gray-600 text-sm leading-relaxed">{feature.description}</p>
-              </div>
-            ))}
-          </div>
+      <div className="max-w-6xl mx-auto w-full mb-16">
+        <h2 className="text-3xl font-bold mb-8 text-center">Why MoodBoard?</h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {whyMoodboard.map((item, index) => (
+            <div
+              key={index}
+              className="backdrop-blur-md bg-gradient-to-br from-blue-500/20 to-cyan-500/20 border border-blue-400/30 p-6 rounded-lg text-center"
+            >
+              <div className="text-4xl mb-4">{item.icon}</div>
+              <h3 className="text-xl font-bold mb-3">{item.title}</h3>
+              <p className="text-gray-300 text-sm leading-relaxed">{item.description}</p>
+            </div>
+          ))}
         </div>
+      </div>
+
+      <div className="max-w-6xl mx-auto w-full mb-16">
+      <h2 className="text-3xl font-bold mb-8 text-center">What People Say</h2>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {reviews.map((review, index) => (
+          <div
+            key={index}
+            className="backdrop-blur-md bg-gradient-to-br from-pink-500/20 to-purple-500/20 border border-pink-400/30 p-6 rounded-lg"
+          >
+            <div className="flex items-center gap-4 mb-4">
+              <div className="w-12 h-12 rounded-full bg-gradient-to-r from-purple-400 to-pink-500 flex items-center justify-center font-bold">
+                {review.avatar}
+              </div>
+              <div>
+                <h4 className="font-bold text-lg">{review.name}</h4>
+                <p className="text-gray-400 text-sm">{review.role}</p>
+              </div>
+            </div>
+            <div className="mb-3">{renderStars(review.rating)}</div>
+            <p className="text-gray-300 text-sm leading-relaxed">"{review.comment}"</p>
+          </div>
+        ))}
+      </div>
+    </div>
+
       </div>
       <footer>
         <div className="text-center">

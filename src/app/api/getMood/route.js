@@ -12,7 +12,7 @@ export async function GET(req){
       moodCounts[r.mood] = (moodCounts[r.mood] || 0) + 1;
     });
 
-    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    const sevenDaysAgo = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000);
     const lastSevenDaysData = await Mood.find({userId:id,date:{$gt:sevenDaysAgo}});
     const mood7DayCounts = {};
     lastSevenDaysData.forEach((r) => {
