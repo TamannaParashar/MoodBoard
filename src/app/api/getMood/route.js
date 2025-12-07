@@ -12,15 +12,15 @@ export async function GET(req){
       moodCounts[r.mood] = (moodCounts[r.mood] || 0) + 1;
     });
 
-    const sevenDaysAgo = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000);
-    const lastSevenDaysData = await Mood.find({userId:id,date:{$gt:sevenDaysAgo}});
-    const mood7DayCounts = {};
-    lastSevenDaysData.forEach((r) => {
-        mood7DayCounts[r.mood] = (mood7DayCounts[r.mood] || 0) + 1;
+    const threeDaysAgo = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000);
+    const lastThreeDaysData = await Mood.find({userId:id,date:{$gt:threeDaysAgo}});
+    const mood3DayCounts = {};
+    lastThreeDaysData.forEach((r) => {
+        mood3DayCounts[r.mood] = (mood3DayCounts[r.mood] || 0) + 1;
     });
     let maxMood = null;
     let maxCount = 0;
-    for(const [mood,cnt] of Object.entries(mood7DayCounts)){
+    for(const [mood,cnt] of Object.entries(mood3DayCounts)){
       if(cnt > maxCount){
         maxCount = cnt;
         maxMood = mood;

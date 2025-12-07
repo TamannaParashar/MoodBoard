@@ -203,7 +203,7 @@ export default function Home() {
 
 
   return (
-    <main className="min-h-screen bg-black text-white overflow-hidden relative">
+    <main className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white overflow-hidden relative">
       <div>
         <Top/>
       </div>
