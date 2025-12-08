@@ -82,7 +82,7 @@ Based on mood:
 ---
 
 # 📁 Project Structure
-
+```
 moodboard/
 ├── public/
 │   ├── models/
@@ -117,7 +117,7 @@ moodboard/
 │   │   └── ui/
 │   └── lib/
 └── README.md
-
+```
 ---
 
 # 🔐 LifeLong Code & LifeLine Logic
