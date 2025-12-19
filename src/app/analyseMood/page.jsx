@@ -1,9 +1,10 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Doughnut } from "react-chartjs-2"
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from "chart.js"
 import { toast, Toaster } from "sonner"
+import { socket } from "@/lib/socket"
 
 ChartJS.register(ArcElement, Tooltip, Legend)
 
@@ -12,15 +13,124 @@ export default function AnalyseMood() {
   const [moodData, setMoodData] = useState(null)
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
-
   const [lifeLong, setLifeLong] = useState(false)
   const [lifeLine, setLifeLine] = useState(false)
   const [modalStep, setModalStep] = useState(0) // 0=Yes/No,1=Enter ID
   const [modalUserId, setModalUserId] = useState("")
   const [lifeLineName, setLifeLineName] = useState("")
   const [lifeLongCode, setLifeLongCode] = useState("");
+  const [showConnections, setShowConnections] = useState(false)
+  const [connectionsUserId, setConnectionsUserId] = useState("")
+  const [connections, setConnections] = useState([])
+  const [connectionsLoading, setConnectionsLoading] = useState(false)
+  const [incomingCall, setIncomingCall] = useState(null);
 
-  const fetchMoodData = async()=>{
+  // Refs for media and connection (use ref to avoid stale closures)
+  const peerConnectionRef = useRef(null)
+  const localVideoRef = useRef(null)
+  const remoteVideoRef = useRef(null)
+  const localStreamRef = useRef(null)
+
+  // ---------- Socket & signalling setup ----------
+  useEffect(() => {
+    if (!userId) return
+
+    socket.connect()
+    socket.emit("register", userId)
+    console.log("Socket connected as:", userId)
+
+    // Incoming call request
+    socket.on("incoming-call", ({ fromUserId }) => {
+      setIncomingCall({ fromUserId })
+    })
+
+    // Call accepted by other user -> start as initiator (create offer)
+    socket.on("call-accepted", async ({ fromUserId }) => {
+      toast.success(`Call accepted by ${fromUserId}`)
+      // start call as initiator (create offer)
+      await startCallSession(fromUserId, true)
+    })
+
+    // Call rejected
+    socket.on("call-rejected", ({ fromUserId }) => {
+      toast.error(`Call rejected by ${fromUserId}`)
+      cleanupCall()
+    })
+
+    // WebRTC offer received (we are callee)
+    socket.on("webrtc-offer", async ({ fromUserId, offer }) => {
+      try {
+        await createPeerConnection(fromUserId, false)
+        if (peerConnectionRef.current) {
+          await peerConnectionRef.current.setRemoteDescription(offer)
+          const answer = await peerConnectionRef.current.createAnswer()
+          await peerConnectionRef.current.setLocalDescription(answer)
+          socket.emit("webrtc-answer", { toUserId: fromUserId, answer })
+        }
+      } catch (err) {
+        console.error("Error handling webrtc-offer:", err)
+      }
+    })
+
+    // WebRTC answer received (we are initiator)
+    socket.on("webrtc-answer", async ({ answer }) => {
+      try {
+        if (peerConnectionRef.current && answer) {
+          await peerConnectionRef.current.setRemoteDescription(answer)
+        }
+      } catch (err) {
+        console.error("Error handling webrtc-answer:", err)
+      }
+    })
+
+    // ICE candidate from remote
+    socket.on("webrtc-ice-candidate", async ({ candidate }) => {
+      try {
+        if (peerConnectionRef.current && candidate) {
+          await peerConnectionRef.current.addIceCandidate(candidate)
+        }
+      } catch (err) {
+        console.error("Error adding remote ICE candidate:", err)
+      }
+    })
+
+    return () => {
+      socket.off("incoming-call")
+      socket.off("call-accepted")
+      socket.off("call-rejected")
+      socket.off("webrtc-offer")
+      socket.off("webrtc-answer")
+      socket.off("webrtc-ice-candidate")
+      socket.disconnect()
+    }
+  }, [userId])
+
+  // ---------- API / UI functions (unchanged behaviour) ----------
+  const fetchMyConnections = async () => {
+    if (!connectionsUserId.trim()) {
+      toast.error("Please enter a valid ID")
+      return
+    }
+
+    try {
+      setConnectionsLoading(true)
+      const res = await fetch(`/api/getConnections?userId=${connectionsUserId}`)
+      const data = await res.json()
+
+      if (!res.ok) {
+        toast.error(data.message || "Failed to fetch connections")
+        return
+      }
+
+      setConnections(data.connections || [])
+    } catch {
+      toast.error("Something went wrong")
+    } finally {
+      setConnectionsLoading(false)
+    }
+  }
+
+  const fetchMoodData = async () => {
     setError("")
     setMoodData(null)
     setLoading(true)
@@ -58,57 +168,59 @@ export default function AnalyseMood() {
   }
 
   const fetchConnectionsMoods = async () => {
-  if (!userId.trim()) {
-    toast.error("Please enter a valid ID")
-    return
-  }
-
-  try {
-    // 1️⃣ Get connections
-    const res = await fetch(`/api/getConnections?userId=${userId}`)
-    const data = await res.json()
-    if (!res.ok) throw new Error(data.message || "Failed to fetch connections")
-
-    const connections = data.connections || []
-    if (!connections.length) {
-      toast.info("No connections found for this user.")
+    if (!userId.trim()) {
+      toast.error("Please enter a valid ID")
       return
     }
 
-    // 2️⃣ Messages for moods
-    const moodMessages = {
-      happy: "They seem happy 😇",
-      sad: "They are feeling sad. You can reach out!",
-      neutral: "They feel neutral. Maybe check in?",
-      fear: "They are fearful. Offer support!",
-      surprised: "They had surprises. Be there for them!",
-      anger: "They are angry. Stay calm and supportive."
+    try {
+      const res = await fetch(`/api/getConnections?userId=${userId}`)
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.message || "Failed to fetch connections")
+
+      const connectionsList = data.connections || []
+      if (!connectionsList.length) {
+        toast.info("No connections found for this user.")
+        return
+      }
+
+      const moodMessages = {
+        happy: "They seem happy 😇",
+        sad: "They are feeling sad. You can reach out!",
+        neutral: "They feel neutral. Maybe check in?",
+        fear: "They are fearful. Offer support!",
+        surprised: "They had surprises. Be there for them!",
+        anger: "They are angry. Stay calm and supportive."
+      }
+
+      await Promise.all(
+        connectionsList.map(async (conn) => {
+          try {
+            const moodRes = await fetch(`/api/connectionMsg?userId=${conn.userId}`)
+            const moodData = await moodRes.json()
+            if (!moodRes.ok || !moodData.mood) return
+
+            toast.info(`${conn.name || "Someone"}: ${moodMessages[moodData.mood] || "No mood info"}`)
+          } catch (err) {
+            console.error("Error fetching connection mood:", err)
+          }
+        })
+      )
+    } catch (err) {
+      toast.error(err.message || "Something went wrong")
     }
-
-    // 3️⃣ Fetch each connection's mood
-    await Promise.all(
-      connections.map(async (conn) => {
-        try {
-          const moodRes = await fetch(`/api/connectionMsg?userId=${conn.userId}`)
-          const moodData = await moodRes.json()
-          if (!moodRes.ok || !moodData.mood) return
-
-          toast.info(`${conn.name || "Someone"}: ${moodMessages[moodData.mood] || "No mood info"}`)
-        } catch (err) {
-          console.error("Error fetching connection mood:", err)
-        }
-      })
-    )
-  } catch (err) {
-    toast.error(err.message || "Something went wrong")
   }
-}
+
+  const handleConnect = (connectionUserId) => {
+    toast(`User clicked for ${connectionUserId}`)
+    // caller emits with keys that the server expects
+    socket.emit("call-request", { fromUserId: userId, toUserId: connectionUserId })
+  }
 
   const handleAnalyze = async () => {
     await fetchMoodData()
     await fetchConnectionsMoods()
   }
-
 
   const handleKeyPress = (e) => {
     if (e.key === "Enter") handleAnalyze()
@@ -119,56 +231,52 @@ export default function AnalyseMood() {
   const handleLifeLineYes = () => setModalStep(1)
 
   const handleLifeLongSubmit = async () => {
-  if (!modalUserId.trim()) {
-    toast.error("Please enter a valid ID")
-    return
-  }
-
-  try {
-    // Check if code already exists
-    const checkRes = await fetch(`/api/checkLifeLongCodeInThisID?userId=${modalUserId}`)
-    const checkData = await checkRes.json()
-
-    if (!checkRes.ok) throw new Error(checkData.message || "Check failed")
-
-    let codeToShow = ""
-
-    if (checkData.exists) {
-      // Code exists, show the existing code
-      codeToShow = checkData.code
-      toast(`A Lifelong code already exists: ${codeToShow}`)
-    } else {
-      // Generate new code
-      const generateLifeLongCode = () => {
-        const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
-        let code = ""
-        for (let i = 0; i < 12; i++) {
-          code += chars.charAt(Math.floor(Math.random() * chars.length))
-        }
-        return code
-      }
-
-      codeToShow = generateLifeLongCode()
-
-      // Store in DB
-      const storeRes = await fetch(`/api/addLifeLongCode`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: modalUserId, code: codeToShow }),
-      })
-      const storeData = await storeRes.json()
-      if (!storeRes.ok) throw new Error(storeData.message || "Failed to store code")
-
-      toast.success(`Your Lifelong code: ${codeToShow}`)
+    if (!modalUserId.trim()) {
+      toast.error("Please enter a valid ID")
+      return
     }
-  } catch (err) {
-    toast.error(err.message || "Something went wrong")
-  } finally {
-    setLifeLong(false)
-    setModalStep(0)
-    setModalUserId("")
+
+    try {
+      const checkRes = await fetch(`/api/checkLifeLongCodeInThisID?userId=${modalUserId}`)
+      const checkData = await checkRes.json()
+
+      if (!checkRes.ok) throw new Error(checkData.message || "Check failed")
+
+      let codeToShow = ""
+
+      if (checkData.exists) {
+        codeToShow = checkData.code
+        toast(`A Lifelong code already exists: ${codeToShow}`)
+      } else {
+        const generateLifeLongCode = () => {
+          const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
+          let code = ""
+          for (let i = 0; i < 12; i++) {
+            code += chars.charAt(Math.floor(Math.random() * chars.length))
+          }
+          return code
+        }
+
+        codeToShow = generateLifeLongCode()
+
+        const storeRes = await fetch(`/api/addLifeLongCode`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ userId: modalUserId, code: codeToShow }),
+        })
+        const storeData = await storeRes.json()
+        if (!storeRes.ok) throw new Error(storeData.message || "Failed to store code")
+
+        toast.success(`Your Lifelong code: ${codeToShow}`)
+      }
+    } catch (err) {
+      toast.error(err.message || "Something went wrong")
+    } finally {
+      setLifeLong(false)
+      setModalStep(0)
+      setModalUserId("")
+    }
   }
-}
 
   const handleLifeLineSubmit = async () => {
     if (!modalUserId.trim()) {
@@ -177,34 +285,32 @@ export default function AnalyseMood() {
     }
 
     try {
-      //check if valid user?
-      const data = await fetch(`/api/checkUser?userId=${modalUserId}`);
-      const res = await data.json();
-      if(!data.ok||!res.exists){
-        toast.error("Invalid user id");
-        return;
-      } 
-      //check if valid lifeLongCode?
-      const codeCheck = await fetch(`/api/checkLifeLongCodeInWhole?lifeLongCode=${lifeLongCode}`);
-      const codeData = await codeCheck.json();
+      const data = await fetch(`/api/checkUser?userId=${modalUserId}`)
+      const res = await data.json()
+      if (!data.ok || !res.exists) {
+        toast.error("Invalid user id")
+        return
+      }
+      const codeCheck = await fetch(`/api/checkLifeLongCodeInWhole?lifeLongCode=${lifeLongCode}`)
+      const codeData = await codeCheck.json()
 
       if (!codeData.exists) {
-        toast.error("Invalid Lifelong Code");
-        return;
+        toast.error("Invalid Lifelong Code")
+        return
       }
-      // do connection
+
       const lifeLineRes = await fetch("/api/addLifeLineCode", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           userId: codeData.ownerUserId,
           connection: {
-            userId: modalUserId, 
+            userId: modalUserId,
             name: lifeLineName || ""
           }
         })
-      });
-      if(lifeLineRes.ok){
+      })
+      if (lifeLineRes.ok) {
         toast.success(`You are now connected to ${lifeLineName}`)
       }
     } catch {
@@ -217,6 +323,87 @@ export default function AnalyseMood() {
     }
   }
 
+  // ---------------- WebRTC helpers (use refs)
+  const createPeerConnection = async (otherUserId, isInitiator) => {
+    // clean previous
+    cleanupCall()
+
+    const pc = new RTCPeerConnection({
+      iceServers: [
+        { urls: "stun:stun.l.google.com:19302" }
+      ]
+    })
+    peerConnectionRef.current = pc
+
+    // attach remote stream to remote video element
+    pc.ontrack = (event) => {
+      if (remoteVideoRef.current) {
+        // event.streams[0] is usually available
+        remoteVideoRef.current.srcObject = event.streams[0]
+      }
+    }
+
+    pc.onicecandidate = (event) => {
+      if (event.candidate) {
+        socket.emit("webrtc-ice-candidate", { toUserId: otherUserId, candidate: event.candidate })
+      }
+    }
+
+    try {
+      const local = await navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+      localStreamRef.current = local
+      if (localVideoRef.current) localVideoRef.current.srcObject = local
+      local.getTracks().forEach((track) => pc.addTrack(track, local))
+    } catch (err) {
+      console.error("getUserMedia error:", err)
+      toast.error("Could not access camera/microphone")
+      throw err
+    }
+
+    if (isInitiator) {
+      const offer = await pc.createOffer()
+      await pc.setLocalDescription(offer)
+      socket.emit("webrtc-offer", { toUserId: otherUserId, offer })
+    }
+
+    return pc
+  }
+
+  const startCallSession = async (otherUserId, isInitiator) => {
+    await createPeerConnection(otherUserId, isInitiator)
+  }
+
+  const cleanupCall = () => {
+    if (peerConnectionRef.current) {
+      try {
+        peerConnectionRef.current.close()
+      } catch (err) {}
+    }
+    peerConnectionRef.current = null
+
+    if (localStreamRef.current) {
+      localStreamRef.current.getTracks().forEach((t) => t.stop())
+    }
+    localStreamRef.current = null
+
+    if (localVideoRef.current) localVideoRef.current.srcObject = null
+    if (remoteVideoRef.current) remoteVideoRef.current.srcObject = null
+  }
+
+  // handle accept/reject buttons — emit keys that match server expectation
+  const acceptIncomingCall = () => {
+    if (!incomingCall) return
+    socket.emit("call-accept", { fromUserId: userId, toUserId: incomingCall.fromUserId })
+    setIncomingCall(null)
+  }
+
+  const rejectIncomingCall = () => {
+    if (!incomingCall) return
+    socket.emit("call-reject", { fromUserId: userId, toUserId: incomingCall.fromUserId })
+    setIncomingCall(null)
+  }
+
+  // ---------------- Modal renderers (unchanged, but rely on above handlers) ----------------
   const renderModal = () => {
     if (!lifeLong && !lifeLine) return null
 
@@ -325,8 +512,88 @@ export default function AnalyseMood() {
               </div>
             </div>
           )}
+        </div>
+      </div>
+    )
+  }
 
+  const renderConnectionsModal = () => {
+    if (!showConnections) return null
 
+    return (
+      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <div className="bg-slate-900 p-8 rounded-2xl shadow-2xl max-w-md w-full text-white space-y-6">
+          {connections.length === 0 && (
+            <>
+              <p className="text-lg font-semibold">Enter your User ID</p>
+
+              <input
+                type="text"
+                value={connectionsUserId}
+                onChange={(e) => setConnectionsUserId(e.target.value)}
+                className="w-full p-3 rounded-lg bg-slate-700/50 text-white"
+                placeholder="Your ID"
+              />
+
+              <div className="flex justify-end gap-4">
+                <button
+                  onClick={fetchMyConnections}
+                  className="px-4 py-2 bg-indigo-600 rounded-lg"
+                  disabled={connectionsLoading}
+                >
+                  {connectionsLoading ? "Loading..." : "OK"}
+                </button>
+
+                <button
+                  onClick={() => {
+                    setShowConnections(false)
+                    setConnections([])
+                    setConnectionsUserId("")
+                  }}
+                  className="px-4 py-2 bg-red-600 rounded-lg"
+                >
+                  Cancel
+                </button>
+              </div>
+            </>
+          )}
+
+          {connections.length > 0 && (
+            <>
+              <h3 className="text-xl font-bold mb-4">My Connections</h3>
+
+              <div className="space-y-3">
+                {connections.map((conn) => (
+                  <div
+                    key={conn.userId}
+                    className="flex items-center justify-between bg-slate-800/60 p-3 rounded-lg"
+                  >
+                    <span className="font-medium">{conn.name || "Unnamed"}</span>
+
+                    <button
+                      className="px-4 py-1.5 bg-green-600 hover:bg-green-700 rounded-lg text-sm font-semibold"
+                      onClick={() => handleConnect(conn.userId)}
+                    >
+                      Connect
+                    </button>
+                  </div>
+                ))}
+              </div>
+
+              <div className="flex justify-end mt-6">
+                <button
+                  onClick={() => {
+                    setShowConnections(false)
+                    setConnections([])
+                    setConnectionsUserId("")
+                  }}
+                  className="px-4 py-2 bg-red-600 rounded-lg"
+                >
+                  Close
+                </button>
+              </div>
+            </>
+          )}
         </div>
       </div>
     )
@@ -346,6 +613,9 @@ export default function AnalyseMood() {
         <div className="px-8 py-3 bg-gradient-to-r from-purple-400 via-pink-500 to-red-400 hover:from-indigo-600 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg font-semibold text-white transition shadow-lg hover:shadow-xl m-3">
           <button onClick={() => setLifeLine(true)}>Get LifeLine</button>
         </div>
+        <div className="px-8 py-3 bg-gradient-to-r from-purple-400 via-pink-500 to-red-400 hover:from-indigo-600 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg font-semibold text-white transition shadow-lg hover:shadow-xl m-3">
+          <button onClick={() => setShowConnections(true)}>My Connections</button>
+        </div>
       </div>
 
       <div className="flex items-center justify-center p-4">
@@ -357,7 +627,7 @@ export default function AnalyseMood() {
             <label className="block text-sm font-semibold text-slate-300 mb-4">Enter Your ID</label>
             <div className="flex gap-3">
               <input
-                type="number"
+                type="text"
                 placeholder="Enter your unique ID"
                 value={userId}
                 onChange={(e) => setUserId(e.target.value)}
@@ -489,6 +759,26 @@ export default function AnalyseMood() {
             </div>
           )}
 
+          {incomingCall && (
+            <div className="fixed inset-0 bg-black/50 flex items-center justify-center">
+              <div className="bg-slate-900 p-6 rounded-xl text-white">
+                <p>User {incomingCall.fromUserId} is calling you</p>
+                <button
+                  className="px-4 py-2 bg-green-600 rounded-lg mr-2"
+                  onClick={acceptIncomingCall}
+                >
+                  Accept
+                </button>
+                <button
+                  className="px-4 py-2 bg-red-600 rounded-lg"
+                  onClick={rejectIncomingCall}
+                >
+                  Reject
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Empty State */}
           {!moodData && !loading && !error && (
             <div className="bg-slate-800/50 backdrop-blur border border-slate-700/50 rounded-2xl p-12 text-center shadow-2xl">
@@ -498,8 +788,14 @@ export default function AnalyseMood() {
         </div>
       </div>
 
-      {/* Render Modal */}
+      <div className="flex gap-4 mt-6">
+        <video ref={localVideoRef} autoPlay muted playsInline className="w-64 h-48 rounded-xl bg-black" />
+        <video ref={remoteVideoRef} autoPlay playsInline className="w-64 h-48 rounded-xl bg-black" />
+      </div>
+
+      {/* Render Modals */}
       {renderModal()}
+      {renderConnectionsModal()}
     </div>
   )
 }
