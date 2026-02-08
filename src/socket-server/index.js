@@ -1,6 +1,6 @@
 import { Server } from "socket.io";
-
-const io = new Server(3001, {
+const PORT = process.env.PORT || 3001;
+const io = new Server(PORT, {
   cors: { origin: "*" }
 });
 
