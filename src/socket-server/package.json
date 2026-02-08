@@ -1,9 +1,11 @@
 {
   "name": "socket-server",
   "version": "1.0.0",
+  "type": "module",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js"
+    "start": "node index.js",
+    "build": "echo 'No build needed for socket server'"
   },
   "dependencies": {
     "express": "^4.18.2",
