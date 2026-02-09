@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react"
 import { Doughnut } from "react-chartjs-2"
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from "chart.js"
 import { toast, Toaster } from "sonner"
-import { socket } from "@/lib/socket"
+import { useRouter } from "next/navigation"
 
 ChartJS.register(ArcElement, Tooltip, Legend)
 
@@ -23,87 +23,10 @@ export default function AnalyseMood() {
   const [connectionsUserId, setConnectionsUserId] = useState("")
   const [connections, setConnections] = useState([])
   const [connectionsLoading, setConnectionsLoading] = useState(false)
-  const [incomingCall, setIncomingCall] = useState(null);
+  const [chatRoom, setChatRoom] = useState(null)
+  const [chatToUser, setChatToUser] = useState(null)
 
-  // Refs for media and connection (use ref to avoid stale closures)
-  const peerConnectionRef = useRef(null)
-  const localVideoRef = useRef(null)
-  const remoteVideoRef = useRef(null)
-  const localStreamRef = useRef(null)
-
-  // ---------- Socket & signalling setup ----------
-  useEffect(() => {
-    if (!userId) return
-
-    socket.connect()
-    socket.emit("register", userId)
-    console.log("Socket connected as:", userId)
-
-    // Incoming call request
-    socket.on("incoming-call", ({ fromUserId }) => {
-      setIncomingCall({ fromUserId })
-    })
-
-    // Call accepted by other user -> start as initiator (create offer)
-    socket.on("call-accepted", async ({ fromUserId }) => {
-      toast.success(`Call accepted by ${fromUserId}`)
-      // start call as initiator (create offer)
-      await startCallSession(fromUserId, true)
-    })
-
-    // Call rejected
-    socket.on("call-rejected", ({ fromUserId }) => {
-      toast.error(`Call rejected by ${fromUserId}`)
-      cleanupCall()
-    })
-
-    // WebRTC offer received (we are callee)
-    socket.on("webrtc-offer", async ({ fromUserId, offer }) => {
-      try {
-        await createPeerConnection(fromUserId, false)
-        if (peerConnectionRef.current) {
-          await peerConnectionRef.current.setRemoteDescription(offer)
-          const answer = await peerConnectionRef.current.createAnswer()
-          await peerConnectionRef.current.setLocalDescription(answer)
-          socket.emit("webrtc-answer", { toUserId: fromUserId, answer })
-        }
-      } catch (err) {
-        console.error("Error handling webrtc-offer:", err)
-      }
-    })
-
-    // WebRTC answer received (we are initiator)
-    socket.on("webrtc-answer", async ({ answer }) => {
-      try {
-        if (peerConnectionRef.current && answer) {
-          await peerConnectionRef.current.setRemoteDescription(answer)
-        }
-      } catch (err) {
-        console.error("Error handling webrtc-answer:", err)
-      }
-    })
-
-    // ICE candidate from remote
-    socket.on("webrtc-ice-candidate", async ({ candidate }) => {
-      try {
-        if (peerConnectionRef.current && candidate) {
-          await peerConnectionRef.current.addIceCandidate(candidate)
-        }
-      } catch (err) {
-        console.error("Error adding remote ICE candidate:", err)
-      }
-    })
-
-    return () => {
-      socket.off("incoming-call")
-      socket.off("call-accepted")
-      socket.off("call-rejected")
-      socket.off("webrtc-offer")
-      socket.off("webrtc-answer")
-      socket.off("webrtc-ice-candidate")
-      socket.disconnect()
-    }
-  }, [userId])
+  const router = useRouter();
 
   // ---------- API / UI functions (unchanged behaviour) ----------
   const fetchMyConnections = async () => {
@@ -212,12 +135,16 @@ export default function AnalyseMood() {
   }
 
   const handleConnect = (connectionUserId) => {
-    toast(`User clicked for ${connectionUserId}`)
-    // caller emits with keys that the server expects
-    socket.emit("call-request", { fromUserId: userId, toUserId: connectionUserId })
-  }
+  const roomId = [userId, connectionUserId].sort().join("_")
+  router.push(`/chat?roomId=${roomId}&from=${userId}&to=${connectionUserId}`)
+}
 
   const handleAnalyze = async () => {
+    if (!userId.trim()) {
+    toast.error("Please enter a valid ID")
+    return
+  }
+  localStorage.setItem("userId", userId)
     await fetchMoodData()
     await fetchConnectionsMoods()
   }
@@ -321,86 +248,6 @@ export default function AnalyseMood() {
       setModalUserId("")
       setLifeLineName("")
     }
-  }
-
-  // ---------------- WebRTC helpers (use refs)
-  const createPeerConnection = async (otherUserId, isInitiator) => {
-    // clean previous
-    cleanupCall()
-
-    const pc = new RTCPeerConnection({
-      iceServers: [
-        { urls: "stun:stun.l.google.com:19302" }
-      ]
-    })
-    peerConnectionRef.current = pc
-
-    // attach remote stream to remote video element
-    pc.ontrack = (event) => {
-      if (remoteVideoRef.current) {
-        // event.streams[0] is usually available
-        remoteVideoRef.current.srcObject = event.streams[0]
-      }
-    }
-
-    pc.onicecandidate = (event) => {
-      if (event.candidate) {
-        socket.emit("webrtc-ice-candidate", { toUserId: otherUserId, candidate: event.candidate })
-      }
-    }
-
-    try {
-      const local = await navigator.mediaDevices.getUserMedia({ video: true, audio: true })
-      localStreamRef.current = local
-      if (localVideoRef.current) localVideoRef.current.srcObject = local
-      local.getTracks().forEach((track) => pc.addTrack(track, local))
-    } catch (err) {
-      console.error("getUserMedia error:", err)
-      toast.error("Could not access camera/microphone")
-      throw err
-    }
-
-    if (isInitiator) {
-      const offer = await pc.createOffer()
-      await pc.setLocalDescription(offer)
-      socket.emit("webrtc-offer", { toUserId: otherUserId, offer })
-    }
-
-    return pc
-  }
-
-  const startCallSession = async (otherUserId, isInitiator) => {
-    await createPeerConnection(otherUserId, isInitiator)
-  }
-
-  const cleanupCall = () => {
-    if (peerConnectionRef.current) {
-      try {
-        peerConnectionRef.current.close()
-      } catch (err) {}
-    }
-    peerConnectionRef.current = null
-
-    if (localStreamRef.current) {
-      localStreamRef.current.getTracks().forEach((t) => t.stop())
-    }
-    localStreamRef.current = null
-
-    if (localVideoRef.current) localVideoRef.current.srcObject = null
-    if (remoteVideoRef.current) remoteVideoRef.current.srcObject = null
-  }
-
-  // handle accept/reject buttons — emit keys that match server expectation
-  const acceptIncomingCall = () => {
-    if (!incomingCall) return
-    socket.emit("call-accept", { fromUserId: userId, toUserId: incomingCall.fromUserId })
-    setIncomingCall(null)
-  }
-
-  const rejectIncomingCall = () => {
-    if (!incomingCall) return
-    socket.emit("call-reject", { fromUserId: userId, toUserId: incomingCall.fromUserId })
-    setIncomingCall(null)
   }
 
   // ---------------- Modal renderers (unchanged, but rely on above handlers) ----------------
@@ -759,40 +606,26 @@ export default function AnalyseMood() {
             </div>
           )}
 
-          {incomingCall && (
-            <div className="fixed inset-0 bg-black/50 flex items-center justify-center">
-              <div className="bg-slate-900 p-6 rounded-xl text-white">
-                <p>User {incomingCall.fromUserId} is calling you</p>
-                <button
-                  className="px-4 py-2 bg-green-600 rounded-lg mr-2"
-                  onClick={acceptIncomingCall}
-                >
-                  Accept
-                </button>
-                <button
-                  className="px-4 py-2 bg-red-600 rounded-lg"
-                  onClick={rejectIncomingCall}
-                >
-                  Reject
-                </button>
-              </div>
-            </div>
-          )}
-
           {/* Empty State */}
           {!moodData && !loading && !error && (
             <div className="bg-slate-800/50 backdrop-blur border border-slate-700/50 rounded-2xl p-12 text-center shadow-2xl">
               <p className="text-slate-400 text-lg">Enter your ID and click Analyze to see your mood distribution</p>
             </div>
           )}
+          {chatRoom && chatToUser && userId && (
+  <ChatInterface
+    roomId={chatRoom}
+    fromUserId={userId}
+    toUserId={chatToUser}
+    onClose={() => {
+      setChatRoom(null)
+      setChatToUser(null)
+    }}
+  />
+)}
+
         </div>
       </div>
-
-      <div className="flex gap-4 mt-6">
-        <video ref={localVideoRef} autoPlay muted playsInline className="w-64 h-48 rounded-xl bg-black" />
-        <video ref={remoteVideoRef} autoPlay playsInline className="w-64 h-48 rounded-xl bg-black" />
-      </div>
-
       {/* Render Modals */}
       {renderModal()}
       {renderConnectionsModal()}
