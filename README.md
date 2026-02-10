@@ -2,6 +2,10 @@
 
 MoodBoard is an interactive emotion-intelligence platform that uses face-expression recognition, AI-driven recommendations, and human-connection systems to improve emotional well-being. Using webcam-based mood detection, MoodBoard provides personalized songs, quotes, AI conversations, mood analytics, and a unique LifeLine system that connects users with trusted individuals during moments of emotional distress.
 
+## Demo Video
+
+[▶️ Click here to watch the demo](./assets/MoodBoard_demo.mp4)
+
 ---
 
 ## 🚀 Key Features
