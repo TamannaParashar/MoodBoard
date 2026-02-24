@@ -5,6 +5,7 @@ import { Doughnut } from "react-chartjs-2"
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from "chart.js"
 import { toast, Toaster } from "sonner"
 import { useRouter } from "next/navigation"
+import { X, Heart, Users, Shield, TrendingUp, Send, ArrowRight } from "lucide-react"
 
 ChartJS.register(ArcElement, Tooltip, Legend)
 
@@ -15,20 +16,17 @@ export default function AnalyseMood() {
   const [loading, setLoading] = useState(false)
   const [lifeLong, setLifeLong] = useState(false)
   const [lifeLine, setLifeLine] = useState(false)
-  const [modalStep, setModalStep] = useState(0) // 0=Yes/No,1=Enter ID
+  const [modalStep, setModalStep] = useState(0)
   const [modalUserId, setModalUserId] = useState("")
   const [lifeLineName, setLifeLineName] = useState("")
-  const [lifeLongCode, setLifeLongCode] = useState("");
+  const [lifeLongCode, setLifeLongCode] = useState("")
   const [showConnections, setShowConnections] = useState(false)
   const [connectionsUserId, setConnectionsUserId] = useState("")
   const [connections, setConnections] = useState([])
   const [connectionsLoading, setConnectionsLoading] = useState(false)
-  const [chatRoom, setChatRoom] = useState(null)
-  const [chatToUser, setChatToUser] = useState(null)
 
-  const router = useRouter();
+  const router = useRouter()
 
-  // ---------- API / UI functions (unchanged behaviour) ----------
   const fetchMyConnections = async () => {
     if (!connectionsUserId.trim()) {
       toast.error("Please enter a valid ID")
@@ -75,14 +73,14 @@ export default function AnalyseMood() {
       }
       setMoodData(data.moodCounts)
       const moodMessage = {
-        happy: `You deserve to be happy😇. Stay joyful!`,
+        happy: `You deserve to be happy 😇. Stay joyful!`,
         sad: `It seems you've had a heavy few days. You've shown strength by checking in.`,
         neutral: `Your emotional energy seems low. Let's rebuild it together.`,
         fear: `Fear is temporary. You've faced uncertainty before and can do it again.`,
         surprised: `Life can be unpredictable. You're handling new moments better than you think.`,
         anger: `Anger can be energy. Let's channel it into something constructive or soothing.`,
       }
-      toast(moodMessage[data.maxMood] || "Keep going, you are doing your best.")
+      toast.success(moodMessage[data.maxMood] || "Keep going, you are doing your best.")
     } catch {
       setError("Something went wrong")
     } finally {
@@ -135,16 +133,16 @@ export default function AnalyseMood() {
   }
 
   const handleConnect = (connectionUserId) => {
-  const roomId = [userId, connectionUserId].sort().join("_")
-  router.push(`/chat?roomId=${roomId}&from=${userId}&to=${connectionUserId}`)
-}
+    const roomId = [userId, connectionUserId].sort().join("_")
+    router.push(`/chat?roomId=${roomId}&from=${userId}&to=${connectionUserId}`)
+  }
 
   const handleAnalyze = async () => {
     if (!userId.trim()) {
-    toast.error("Please enter a valid ID")
-    return
-  }
-  localStorage.setItem("userId", userId)
+      toast.error("Please enter a valid ID")
+      return
+    }
+    localStorage.setItem("userId", userId)
     await fetchMoodData()
     await fetchConnectionsMoods()
   }
@@ -153,7 +151,7 @@ export default function AnalyseMood() {
     if (e.key === "Enter") handleAnalyze()
   }
 
-  // ---------------- Modal Handlers ----------------
+  // Modal Handlers
   const handleLifeLongYes = () => setModalStep(1)
   const handleLifeLineYes = () => setModalStep(1)
 
@@ -173,7 +171,7 @@ export default function AnalyseMood() {
 
       if (checkData.exists) {
         codeToShow = checkData.code
-        toast(`A Lifelong code already exists: ${codeToShow}`)
+        toast.success(`A Lifelong code already exists: ${codeToShow}`)
       } else {
         const generateLifeLongCode = () => {
           const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
@@ -250,35 +248,52 @@ export default function AnalyseMood() {
     }
   }
 
-  // ---------------- Modal renderers (unchanged, but rely on above handlers) ----------------
   const renderModal = () => {
     if (!lifeLong && !lifeLine) return null
 
     return (
-      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-        <div className="bg-slate-900 p-8 rounded-2xl shadow-2xl max-w-md w-full text-white">
+      <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div className="bg-gradient-to-br from-slate-900 to-slate-800 p-8 rounded-2xl shadow-2xl max-w-md w-full text-white border border-slate-700">
+          <div className="absolute -top-3 -right-3">
+            <button
+              onClick={() => {
+                setLifeLong(false)
+                setLifeLine(false)
+                setModalStep(0)
+              }}
+              className="p-2 bg-slate-700 hover:bg-slate-600 rounded-full transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+
           {modalStep === 0 && (
-            <div className="space-y-4">
-              <p>
-                {lifeLong
-                  ? "Stay supported without giving away your identity. Create a Lifelong Code and share it with a trusted person—if your mood is consistently low, they will receive a safe, anonymous alert to help you. Do you want to proceed?"
-                  : "Stay connected with a trusted person through Lifeline. When their mood signals distress, you'll get a notification so you can offer support—no personal info is shared. Do you want to proceed?"}
-              </p>
-              <div className="flex justify-end gap-4">
+            <div className="space-y-6">
+              <div>
+                <h3 className="text-xl font-bold mb-3">
+                  {lifeLong ? "Create a Lifelong Code" : "Join Lifeline"}
+                </h3>
+                <p className="text-slate-300">
+                  {lifeLong
+                    ? "Stay supported without giving away your identity. Create a Lifelong Code and share it with a trusted person—if your mood is consistently low, they will receive a safe, anonymous alert to help you."
+                    : "Stay connected with a trusted person through Lifeline. When their mood signals distress, you'll get a notification so you can offer support—no personal info is shared."}
+                </p>
+              </div>
+              <div className="flex gap-3 justify-end">
                 <button
-                  className="px-4 py-2 bg-indigo-600 rounded-lg"
-                  onClick={lifeLong ? handleLifeLongYes : handleLifeLineYes}
-                >
-                  Yes
-                </button>
-                <button
-                  className="px-4 py-2 bg-red-600 rounded-lg"
+                  className="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg font-medium transition-colors"
                   onClick={() => {
                     setLifeLong(false)
                     setLifeLine(false)
                   }}
                 >
-                  No
+                  Cancel
+                </button>
+                <button
+                  className="px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 rounded-lg font-medium transition-colors"
+                  onClick={lifeLong ? handleLifeLongYes : handleLifeLineYes}
+                >
+                  Continue
                 </button>
               </div>
             </div>
@@ -286,64 +301,69 @@ export default function AnalyseMood() {
 
           {modalStep === 1 && lifeLong && (
             <div className="space-y-4">
-              <p>Enter your user ID to generate a Lifelong code:</p>
+              <h3 className="text-lg font-bold">Enter Your User ID</h3>
               <input
                 type="text"
                 value={modalUserId}
                 onChange={(e) => setModalUserId(e.target.value)}
-                className="w-full p-3 rounded-lg bg-slate-700/50 text-white"
+                placeholder="Your unique ID"
+                className="w-full px-4 py-3 rounded-lg bg-slate-700/50 border border-slate-600 text-white placeholder-slate-400 focus:outline-none focus:border-purple-400"
               />
-              <div className="flex justify-end gap-4">
-                <button
-                  onClick={handleLifeLongSubmit}
-                  className="px-4 py-2 bg-indigo-600 rounded-lg"
-                >
-                  Generate Code
-                </button>
+              <div className="flex gap-3 justify-end">
                 <button
                   onClick={() => {
                     setLifeLong(false)
                     setModalStep(0)
                     setModalUserId("")
                   }}
-                  className="px-4 py-2 bg-red-600 rounded-lg"
+                  className="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg font-medium transition-colors"
                 >
                   Cancel
+                </button>
+                <button
+                  onClick={handleLifeLongSubmit}
+                  className="px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 rounded-lg font-medium transition-colors flex items-center gap-2"
+                >
+                  Generate <ArrowRight className="w-4 h-4" />
                 </button>
               </div>
             </div>
           )}
+
           {modalStep === 1 && lifeLine && (
             <div className="space-y-4">
-              <p>Enter your user ID:</p>
-              <input
-                type="text"
-                value={modalUserId}
-                onChange={(e) => setModalUserId(e.target.value)}
-                className="w-full p-3 rounded-lg bg-slate-700/50 text-white"
-              />
-              <p>Enter THEIR Lifelong Code:</p>
-              <input
-                type="text"
-                placeholder="Their 12-digit code"
-                value={lifeLongCode}
-                onChange={(e) => setLifeLongCode(e.target.value)}
-                className="w-full p-3 rounded-lg bg-slate-700/50 text-white"
-              />
-              <input
-                type="text"
-                placeholder="Give a name for this connection"
-                value={lifeLineName}
-                onChange={(e) => setLifeLineName(e.target.value)}
-                className="w-full p-3 rounded-lg bg-slate-700/50 text-white"
-              />
-              <div className="flex justify-end gap-4">
-                <button
-                  onClick={handleLifeLineSubmit}
-                  className="px-4 py-2 bg-indigo-600 rounded-lg"
-                >
-                  Connect
-                </button>
+              <h3 className="text-lg font-bold">Connect with Lifeline</h3>
+              <div>
+                <label className="block text-sm font-medium mb-2 text-slate-300">Your User ID</label>
+                <input
+                  type="text"
+                  value={modalUserId}
+                  onChange={(e) => setModalUserId(e.target.value)}
+                  placeholder="Your ID"
+                  className="w-full px-4 py-2 rounded-lg bg-slate-700/50 border border-slate-600 text-white placeholder-slate-400 focus:outline-none focus:border-purple-400"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-2 text-slate-300">Their Lifelong Code</label>
+                <input
+                  type="text"
+                  placeholder="12-character code"
+                  value={lifeLongCode}
+                  onChange={(e) => setLifeLongCode(e.target.value)}
+                  className="w-full px-4 py-2 rounded-lg bg-slate-700/50 border border-slate-600 text-white placeholder-slate-400 focus:outline-none focus:border-purple-400"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-2 text-slate-300">Connection Name</label>
+                <input
+                  type="text"
+                  placeholder="e.g., Best Friend"
+                  value={lifeLineName}
+                  onChange={(e) => setLifeLineName(e.target.value)}
+                  className="w-full px-4 py-2 rounded-lg bg-slate-700/50 border border-slate-600 text-white placeholder-slate-400 focus:outline-none focus:border-purple-400"
+                />
+              </div>
+              <div className="flex gap-3 justify-end">
                 <button
                   onClick={() => {
                     setLifeLine(false)
@@ -352,9 +372,15 @@ export default function AnalyseMood() {
                     setLifeLineName("")
                     setLifeLongCode("")
                   }}
-                  className="px-4 py-2 bg-red-600 rounded-lg"
+                  className="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg font-medium transition-colors"
                 >
                   Cancel
+                </button>
+                <button
+                  onClick={handleLifeLineSubmit}
+                  className="px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 rounded-lg font-medium transition-colors flex items-center gap-2"
+                >
+                  Connect <Users className="w-4 h-4" />
                 </button>
               </div>
             </div>
@@ -368,265 +394,282 @@ export default function AnalyseMood() {
     if (!showConnections) return null
 
     return (
-      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-        <div className="bg-slate-900 p-8 rounded-2xl shadow-2xl max-w-md w-full text-white space-y-6">
-          {connections.length === 0 && (
-            <>
-              <p className="text-lg font-semibold">Enter your User ID</p>
-
-              <input
-                type="text"
-                value={connectionsUserId}
-                onChange={(e) => setConnectionsUserId(e.target.value)}
-                className="w-full p-3 rounded-lg bg-slate-700/50 text-white"
-                placeholder="Your ID"
-              />
-
-              <div className="flex justify-end gap-4">
+      <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div className="bg-gradient-to-br from-slate-900 to-slate-800 p-8 rounded-2xl shadow-2xl max-w-md w-full text-white border border-slate-700">
+          {connections.length === 0 ? (
+            <div className="space-y-6">
+              <h3 className="text-xl font-bold">My Connections</h3>
+              <div>
+                <label className="block text-sm font-medium mb-3 text-slate-300">Enter Your User ID</label>
+                <input
+                  type="text"
+                  value={connectionsUserId}
+                  onChange={(e) => setConnectionsUserId(e.target.value)}
+                  placeholder="Your ID"
+                  className="w-full px-4 py-3 rounded-lg bg-slate-700/50 border border-slate-600 text-white placeholder-slate-400 focus:outline-none focus:border-purple-400"
+                />
+              </div>
+              <div className="flex gap-3 justify-end">
                 <button
-                  onClick={fetchMyConnections}
-                  className="px-4 py-2 bg-indigo-600 rounded-lg"
-                  disabled={connectionsLoading}
-                >
-                  {connectionsLoading ? "Loading..." : "OK"}
-                </button>
-
-                <button
-                  onClick={() => {
-                    setShowConnections(false)
-                    setConnections([])
-                    setConnectionsUserId("")
-                  }}
-                  className="px-4 py-2 bg-red-600 rounded-lg"
+                  onClick={() => setShowConnections(false)}
+                  className="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg font-medium transition-colors"
                 >
                   Cancel
                 </button>
+                <button
+                  onClick={fetchMyConnections}
+                  disabled={connectionsLoading}
+                  className="px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 disabled:opacity-50 rounded-lg font-medium transition-colors"
+                >
+                  {connectionsLoading ? "Loading..." : "View"}
+                </button>
               </div>
-            </>
-          )}
-
-          {connections.length > 0 && (
-            <>
+            </div>
+          ) : (
+            <div className="space-y-6">
               <h3 className="text-xl font-bold mb-4">My Connections</h3>
-
-              <div className="space-y-3">
+              <div className="space-y-3 max-h-96 overflow-y-auto">
                 {connections.map((conn) => (
                   <div
                     key={conn.userId}
-                    className="flex items-center justify-between bg-slate-800/60 p-3 rounded-lg"
+                    className="flex items-center justify-between bg-slate-800/60 p-4 rounded-lg border border-slate-700 hover:border-purple-400/50 transition-colors"
                   >
-                    <span className="font-medium">{conn.name || "Unnamed"}</span>
-
+                    <div>
+                      <p className="font-semibold">{conn.name || "Unnamed"}</p>
+                      <p className="text-xs text-slate-400">ID: {conn.userId}</p>
+                    </div>
                     <button
-                      className="px-4 py-1.5 bg-green-600 hover:bg-green-700 rounded-lg text-sm font-semibold"
+                      className="px-3 py-1.5 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 rounded-lg text-sm font-semibold transition-colors"
                       onClick={() => handleConnect(conn.userId)}
                     >
-                      Connect
+                      Chat
                     </button>
                   </div>
                 ))}
               </div>
-
-              <div className="flex justify-end mt-6">
-                <button
-                  onClick={() => {
-                    setShowConnections(false)
-                    setConnections([])
-                    setConnectionsUserId("")
-                  }}
-                  className="px-4 py-2 bg-red-600 rounded-lg"
-                >
-                  Close
-                </button>
-              </div>
-            </>
+              <button
+                onClick={() => {
+                  setShowConnections(false)
+                  setConnections([])
+                  setConnectionsUserId("")
+                }}
+                className="w-full px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg font-medium transition-colors"
+              >
+                Close
+              </button>
+            </div>
           )}
         </div>
       </div>
     )
   }
 
-  // ---------------- Mood Data Colors & Total ----------------
-  const moodColors = ["#6366F1", "#EC4899", "#3B82F6", "#F59E0B", "#10B981", "#F43F5E", "#A855F7"]
+  const moodColors = ["#6366F1", "#EC4899", "#3B82F6", "#F59E0B", "#10B981", "#F43F5E"]
   const totalMoods = moodData ? Object.values(moodData).reduce((a, b) => a + b, 0) : 0
 
-  // ---------------- Render ----------------
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 relative">
-      <div className="flex justify-end">
-        <div className="px-8 py-3 bg-gradient-to-r from-purple-400 via-pink-500 to-red-400 hover:from-indigo-600 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg font-semibold text-white transition shadow-lg hover:shadow-xl m-3">
-          <button onClick={() => setLifeLong(true)}>LifeLong code</button>
-        </div>
-        <div className="px-8 py-3 bg-gradient-to-r from-purple-400 via-pink-500 to-red-400 hover:from-indigo-600 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg font-semibold text-white transition shadow-lg hover:shadow-xl m-3">
-          <button onClick={() => setLifeLine(true)}>Get LifeLine</button>
-        </div>
-        <div className="px-8 py-3 bg-gradient-to-r from-purple-400 via-pink-500 to-red-400 hover:from-indigo-600 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg font-semibold text-white transition shadow-lg hover:shadow-xl m-3">
-          <button onClick={() => setShowConnections(true)}>My Connections</button>
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white">
+      <Toaster position="top-right" richColors />
+
+      {/* Header */}
+      <div className="sticky top-0 z-30 border-b border-slate-800/50 bg-gradient-to-b from-slate-950/80 to-transparent backdrop-blur-md">
+        <div className="max-w-6xl mx-auto px-6 py-6 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <TrendingUp className="w-7 h-7 text-purple-400" />
+            <h1 className="text-2xl font-bold">Mood Analysis</h1>
+          </div>
+          <div className="flex gap-3">
+            <button
+              onClick={() => setShowConnections(true)}
+              className="px-4 py-2 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 rounded-lg font-medium transition-all flex items-center gap-2"
+            >
+              <Users className="w-4 h-4" />
+              <span className="hidden sm:inline">My Connections</span>
+            </button>
+            <button
+              onClick={() => setLifeLong(true)}
+              className="px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 rounded-lg font-medium transition-all flex items-center gap-2"
+            >
+              <Heart className="w-4 h-4" />
+              <span className="hidden sm:inline">Lifelong</span>
+            </button>
+            <button
+              onClick={() => setLifeLine(true)}
+              className="px-4 py-2 bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 rounded-lg font-medium transition-all flex items-center gap-2"
+            >
+              <Shield className="w-4 h-4" />
+              <span className="hidden sm:inline">Lifeline</span>
+            </button>
+          </div>
         </div>
       </div>
 
-      <div className="flex items-center justify-center p-4">
-        <div className="w-full max-w-2xl">
-          <Toaster position="top-right" richColors />
-
-          {/* Input Card */}
-          <div className="bg-slate-800/50 backdrop-blur border border-slate-700/50 rounded-2xl p-8 mb-8 shadow-2xl">
-            <label className="block text-sm font-semibold text-slate-300 mb-4">Enter Your ID</label>
-            <div className="flex gap-3">
+      {/* Main Content */}
+      <div className="max-w-6xl mx-auto px-6 py-12">
+        {/* Input Section */}
+        <div className="mb-12">
+          <div className="bg-gradient-to-br from-slate-800/50 to-slate-900/50 backdrop-blur-xl border border-slate-700/50 rounded-2xl p-8 shadow-2xl">
+            <label className="block text-sm font-semibold text-slate-300 mb-4">Enter Your User ID</label>
+            <div className="flex gap-3 flex-col sm:flex-row">
               <input
                 type="text"
                 placeholder="Enter your unique ID"
                 value={userId}
                 onChange={(e) => setUserId(e.target.value)}
                 onKeyPress={handleKeyPress}
-                className="flex-1 px-4 py-3 bg-slate-700/50 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/20 transition"
+                className="flex-1 px-4 py-3 bg-slate-700/50 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-400/20 transition"
               />
               <button
                 onClick={handleAnalyze}
                 disabled={loading}
-                className="px-8 py-3 bg-gradient-to-r from-purple-400 via-pink-500 to-red-400 hover:from-indigo-600 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg font-semibold text-white transition shadow-lg hover:shadow-xl"
+                className="px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg font-semibold text-white transition-all transform hover:scale-105 flex items-center gap-2 whitespace-nowrap"
               >
-                {loading ? "Analyzing..." : "Analyze"}
+                {loading ? (
+                  <>
+                    <span className="animate-spin">⟳</span>
+                    Analyzing...
+                  </>
+                ) : (
+                  <>
+                    Analyze
+                    <ArrowRight className="w-4 h-4" />
+                  </>
+                )}
               </button>
             </div>
           </div>
+        </div>
 
-          {/* Error Message */}
-          {error && (
-            <div className="bg-red-500/20 border border-red-500/50 rounded-lg p-4 mb-8 text-red-200 text-center">
-              {error}
-            </div>
-          )}
+        {/* Error Message */}
+        {error && (
+          <div className="mb-12 p-6 bg-red-500/20 border border-red-500/50 rounded-2xl text-red-200 flex items-start gap-3">
+            <div className="text-2xl">⚠️</div>
+            <p>{error}</p>
+          </div>
+        )}
 
-          {/* Charts & Stats Section */}
-          {moodData && (
-            <div className="space-y-8">
-              {/* Doughnut Chart */}
-              <div className="bg-slate-800/50 backdrop-blur border border-slate-700/50 rounded-2xl p-8 shadow-2xl">
-                <h2 className="text-2xl font-bold text-white mb-8 text-center">Your Mood Distribution</h2>
-                <div className="flex justify-center">
-                  <div className="w-80 h-80">
-                    <Doughnut
-                      data={{
-                        labels: Object.keys(moodData),
-                        datasets: [
-                          {
-                            data: Object.values(moodData),
-                            backgroundColor: moodColors,
-                            borderColor: "#1e293b",
-                            borderWidth: 3,
-                            hoverBorderColor: "#ffffff",
-                            hoverBorderWidth: 4,
+        {/* Charts & Stats */}
+        {moodData && (
+          <div className="space-y-8">
+            {/* Doughnut Chart */}
+            <div className="bg-gradient-to-br from-slate-800/50 to-slate-900/50 backdrop-blur-xl border border-slate-700/50 rounded-2xl p-8 shadow-2xl">
+              <h2 className="text-2xl font-bold mb-8 text-center">Your Mood Distribution</h2>
+              <div className="flex justify-center">
+                <div className="w-full sm:w-96 h-96">
+                  <Doughnut
+                    data={{
+                      labels: Object.keys(moodData),
+                      datasets: [
+                        {
+                          data: Object.values(moodData),
+                          backgroundColor: moodColors,
+                          borderColor: "#1e293b",
+                          borderWidth: 3,
+                          hoverBorderColor: "#ffffff",
+                          hoverBorderWidth: 4,
+                        },
+                      ],
+                    }}
+                    options={{
+                      responsive: true,
+                      maintainAspectRatio: true,
+                      plugins: {
+                        legend: {
+                          position: "bottom",
+                          labels: {
+                            color: "#cbd5e1",
+                            font: { size: 13, weight: "600" },
+                            padding: 20,
+                            usePointStyle: true,
+                            pointStyle: "circle",
                           },
-                        ],
-                      }}
-                      options={{
-                        responsive: true,
-                        maintainAspectRatio: true,
-                        plugins: {
-                          legend: {
-                            position: "bottom",
-                            labels: {
-                              color: "#cbd5e1",
-                              font: { size: 13, weight: "600" },
-                              padding: 20,
-                              usePointStyle: true,
-                              pointStyle: "circle",
-                            },
-                          },
-                          tooltip: {
-                            backgroundColor: "rgba(15, 23, 42, 0.9)",
-                            titleColor: "#e2e8f0",
-                            bodyColor: "#cbd5e1",
-                            borderColor: "#475569",
-                            borderWidth: 1,
-                            padding: 12,
-                            displayColors: true,
-                            callbacks: {
-                              label: (context) => {
-                                const total = context.dataset.data.reduce((a, b) => a + b, 0)
-                                const percentage = ((context.parsed / total) * 100).toFixed(1)
-                                return `${context.label}: ${context.parsed} (${percentage}%)`
-                              },
+                        },
+                        tooltip: {
+                          backgroundColor: "rgba(0, 0, 0, 0.8)",
+                          titleColor: "#fff",
+                          bodyColor: "#e2e8f0",
+                          borderColor: "#475569",
+                          borderWidth: 1,
+                          padding: 12,
+                          displayColors: true,
+                          callbacks: {
+                            label: (context) => {
+                              const label = context.label || ""
+                              const value = context.parsed || 0
+                              const percentage = ((value / totalMoods) * 100).toFixed(1)
+                              return ` ${label}: ${value} (${percentage}%)`
                             },
                           },
                         },
-                      }}
-                    />
+                      },
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Stats Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              <div className="bg-gradient-to-br from-blue-500/20 to-blue-600/20 border border-blue-400/30 rounded-2xl p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-slate-400 text-sm font-medium mb-2">Total Moods Tracked</p>
+                    <p className="text-4xl font-bold">{totalMoods}</p>
                   </div>
+                  <div className="text-5xl opacity-20">📊</div>
                 </div>
               </div>
 
-              {/* Statistics Grid */}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="bg-slate-800/50 backdrop-blur border border-slate-700/50 rounded-lg p-6 shadow-lg">
-                  <p className="text-slate-400 text-sm font-medium mb-2">Total Entries</p>
-                  <p className="text-4xl font-bold text-indigo-400">{totalMoods}</p>
-                </div>
-                <div className="bg-slate-800/50 backdrop-blur border border-slate-700/50 rounded-lg p-6 shadow-lg">
-                  <p className="text-slate-400 text-sm font-medium mb-2">Mood Types</p>
-                  <p className="text-4xl font-bold text-purple-400">{Object.keys(moodData).length}</p>
-                </div>
-              </div>
-
-              {/* Detailed Breakdown */}
-              <div className="bg-slate-800/50 backdrop-blur border border-slate-700/50 rounded-2xl p-8 shadow-2xl">
-                <h3 className="text-xl font-bold text-white mb-6">Detailed Breakdown</h3>
-                <div className="space-y-3">
-                  {Object.entries(moodData).map(([mood, count], index) => {
-                    const percentage = ((count / totalMoods) * 100).toFixed(1)
-                    return (
-                      <div key={mood} className="flex items-center gap-4">
-                        <div
-                          className="w-4 h-4 rounded-full"
-                          style={{ backgroundColor: moodColors[index % moodColors.length] }}
-                        />
-                        <div className="flex-1">
-                          <div className="flex justify-between items-center mb-2">
-                            <span className="text-slate-300 font-medium capitalize">{mood}</span>
-                            <span className="text-slate-400 text-sm">
-                              {count} • {percentage}%
-                            </span>
-                          </div>
-                          <div className="w-full bg-slate-700/50 rounded-full h-2">
-                            <div
-                              className="h-2 rounded-full transition-all duration-500"
-                              style={{
-                                width: `${percentage}%`,
-                                backgroundColor: moodColors[index % moodColors.length],
-                              }}
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    )
-                  })}
+              <div className="bg-gradient-to-br from-purple-500/20 to-pink-600/20 border border-purple-400/30 rounded-2xl p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-slate-400 text-sm font-medium mb-2">Most Frequent Mood</p>
+                    <p className="text-3xl font-bold capitalize">
+                      {moodData && Object.keys(moodData).reduce((a, b) => moodData[a] > moodData[b] ? a : b)}
+                    </p>
+                  </div>
+                  <div className="text-5xl opacity-20">✨</div>
                 </div>
               </div>
             </div>
-          )}
 
-          {/* Empty State */}
-          {!moodData && !loading && !error && (
-            <div className="bg-slate-800/50 backdrop-blur border border-slate-700/50 rounded-2xl p-12 text-center shadow-2xl">
-              <p className="text-slate-400 text-lg">Enter your ID and click Analyze to see your mood distribution</p>
+            {/* Detailed Stats */}
+            <div className="bg-gradient-to-br from-slate-800/50 to-slate-900/50 backdrop-blur-xl border border-slate-700/50 rounded-2xl p-8 shadow-2xl">
+              <h3 className="text-xl font-bold mb-6">Mood Breakdown</h3>
+              <div className="space-y-4">
+                {Object.entries(moodData).map(([mood, count], index) => (
+                  <div key={mood}>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="font-medium capitalize">{mood}</span>
+                      <span className="text-slate-400">{count} times</span>
+                    </div>
+                    <div className="w-full bg-slate-700/50 rounded-full h-2 overflow-hidden">
+                      <div
+                        className="h-full rounded-full transition-all duration-500"
+                        style={{
+                          width: `${(count / totalMoods) * 100}%`,
+                          backgroundColor: moodColors[index],
+                        }}
+                      ></div>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
-          )}
-          {chatRoom && chatToUser && userId && (
-  <ChatInterface
-    roomId={chatRoom}
-    fromUserId={userId}
-    toUserId={chatToUser}
-    onClose={() => {
-      setChatRoom(null)
-      setChatToUser(null)
-    }}
-  />
-)}
+          </div>
+        )}
 
-        </div>
+        {/* Empty State */}
+        {!moodData && !loading && !error && (
+          <div className="text-center py-20">
+            <div className="text-6xl mb-4">📈</div>
+            <h3 className="text-2xl font-bold mb-2">Ready to Analyze Your Moods?</h3>
+            <p className="text-slate-400 mb-8 max-w-md mx-auto">Enter your user ID above to see your emotional journey and get insights about your mood patterns</p>
+          </div>
+        )}
       </div>
-      {/* Render Modals */}
+
+      {/* Modals */}
       {renderModal()}
       {renderConnectionsModal()}
     </div>
