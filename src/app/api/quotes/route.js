@@ -1,16 +1,43 @@
-import axios from "axios";
+import quotes from "./quoteFile.json";
 
-export async function GET(req){
-    const mood = req.nextUrl.searchParams.get("mood");
-    const limit = parseInt(req.nextUrl.searchParams.get("limit"))||10;
-    const offset = parseInt(req.nextUrl.searchParams.get("offset")) || 0;
+export async function GET(req) {
+  const { searchParams } = new URL(req.url);
 
-    try{
-        const url = `https://api.quotify.top/search?q=${mood}&limit=${limit}`;
-        const resp = await axios.get(url);
-        const data = resp.data.slice(offset,limit+offset)
-        return new Response(JSON.stringify(data),{status:200});
-    }catch{
-        return new Response(JSON.stringify({message:"cannot fetch quotes"}),{status:400});
-    }
+  const moodParam = searchParams.get("mood");
+  const limit = parseInt(searchParams.get("limit")) || 10;
+  const offset = parseInt(searchParams.get("offset")) || 0;
+
+  // Validate mood
+  if (!moodParam) {
+    return new Response(
+      JSON.stringify({ message: "Mood parameter is required." }),
+      { status: 400 }
+    );
+  }
+
+  const mood = moodParam.toLowerCase();
+
+  if (!quotes[mood]) {
+    return new Response(
+      JSON.stringify({
+        message: `Invalid mood. Available moods: ${Object.keys(quotes).join(", ")}`
+      }),
+      { status: 400 }
+    );
+  }
+
+  const moodQuotes = quotes[mood];
+
+  // Safe pagination
+  const paginatedQuotes = moodQuotes.slice(offset, offset + limit);
+
+  return new Response(JSON.stringify({
+    mood,
+    total: moodQuotes.length,
+    count: paginatedQuotes.length,
+    data: paginatedQuotes
+  }), {
+    status: 200,
+    headers: { "Content-Type": "application/json" }
+  });
 }

@@ -4,7 +4,6 @@ const detectedMood = new mongoose.Schema({
     userId:{
         type:Number,
         required:false,
-        unique:true
     },
     mood:{
         type:String,

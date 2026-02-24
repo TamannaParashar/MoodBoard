@@ -6,71 +6,97 @@ import { useEffect, useState } from "react";
 export default function QuotePage() {
   const searchParams = useSearchParams();
   const mood = searchParams.get("mood");
+
   const limit = 10;
-  
+
   const [quotes, setQuotes] = useState([]);
   const [offset, setOffset] = useState(0);
+  const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
-  const [loadBtn,setLoadBtn] = useState(false);
 
-  const fetchQuotes = async (reset = false, currentOffset = offset) => {
+  const fetchQuotes = async (reset = false, customOffset = 0) => {
     if (!mood) return;
 
     setLoading(true);
 
     try {
       const res = await fetch(
-        `/api/quotes?mood=${mood}&limit=${limit}&offset=${reset ? 0 : currentOffset}`
+        `/api/quotes?mood=${mood}&limit=${limit}&offset=${customOffset}`
       );
-      if(!res.ok){
+
+      if (!res.ok) {
         setQuotes([]);
-        setLoadBtn(false);
+        setTotal(0);
         setLoading(false);
         return;
       }
+
       const data = await res.json();
 
-      setQuotes((prev) => (reset ? data : [...prev, ...data]));
-      setLoadBtn(true);
+      // API now returns { mood, total, count, data }
+      setTotal(data.total);
+
+      setQuotes((prev) =>
+        reset ? data.data : [...prev, ...data.data]
+      );
+
       if (reset) setOffset(0);
+
     } catch (err) {
-        setQuotes([]);
       console.error("Error fetching quotes:", err);
+      setQuotes([]);
     }
 
     setLoading(false);
   };
 
   useEffect(() => {
-    fetchQuotes(true);
+    if (mood) {
+      fetchQuotes(true, 0);
+    }
   }, [mood]);
 
   const loadMore = () => {
-  const nextOffset = offset + limit;
-  setOffset(nextOffset);
-  fetchQuotes(false, nextOffset);
-};
+    const nextOffset = offset + limit;
+    setOffset(nextOffset);
+    fetchQuotes(false, nextOffset);
+  };
+
+  const hasMore = quotes.length < total;
 
   return (
     <div className="min-h-screen bg-black text-white p-10">
-      <h1 className="text-3xl font-bold mb-4">Mood: {mood}</h1>
+      <h1 className="text-3xl font-bold mb-6 capitalize">
+        Mood: {mood}
+      </h1>
 
-      {quotes.length === 0 && !loading && <p>No quotes found.</p>}
+      {!loading && quotes.length === 0 && (
+        <p className="text-gray-400">No quotes found.</p>
+      )}
 
-      {quotes.map((q, idx) => (
+      {quotes.map((quote, idx) => (
         <div
-          key={`${q.q}-${idx}`}
+          key={`${quote}-${idx}`}
           className="bg-gradient-to-r from-purple-400 via-pink-500 to-red-400 p-6 rounded-lg shadow-lg mb-4"
         >
-          <p className="text-xl italic mb-2">"{q.text}"</p>
-          <p className="text-right text-black">— {q.author}</p>
+          <p className="text-xl italic mb-2 text-black">
+            "{quote}"
+          </p>
         </div>
       ))}
 
-      {loading && <p className="text-gray-400">Loading...</p>}
+      {loading && (
+        <p className="text-gray-400 mt-4">Loading...</p>
+      )}
 
-      {loadBtn &&
-      <button onClick={loadMore} disabled={loading} className="w-max px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg">{loading ? 'Loading...' : 'Load more...'}</button>}
+      {hasMore && !loading && (
+        <button
+          onClick={loadMore}
+          className="mt-6 px-6 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg transition"
+        >
+          Load more
+        </button>
+      )}
     </div>
   );
 }
