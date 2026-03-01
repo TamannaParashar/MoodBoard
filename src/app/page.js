@@ -220,10 +220,10 @@ export default function Home() {
             <div className="absolute bottom-40 left-10 w-72 h-72 bg-blue-500/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: "1s" }}></div>
           </div>
 
-          <div className="relative z-10 text-center mb-16">
+          <div className="relative z-10 text-center">
             <div className="mb-6 inline-block">
               <span className="px-4 py-2 rounded-full bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-400/30 text-sm font-semibold">
-                ✨ Understand Your Emotions Like Never Before
+                Understand Your Emotions Like Never Before
               </span>
             </div>
             <h1 className="text-6xl md:text-7xl font-bold tracking-tight mb-6">
