@@ -96,6 +96,17 @@ export default function Home() {
   const router = useRouter()
 
   useEffect(() => {
+    const savedImage = sessionStorage.getItem("moodboard_capturedImage")
+    const savedMood = sessionStorage.getItem("moodboard_detectedMood")
+    if (savedImage && savedMood) {
+      setCapturedImage(savedImage)
+      setDetectedMood(savedMood)
+      setShowWebcam(true)
+      setShowSongBtn(true)
+    }
+  }, [])
+
+  useEffect(() => {
     const loadModels = async () => {
       try {
         await faceapi.nets.tinyFaceDetector.loadFromUri("/models")
@@ -153,6 +164,8 @@ export default function Home() {
       )
       setDetectedMood(mood)
       setShowSongBtn(true)
+      sessionStorage.setItem("moodboard_capturedImage", canvas.toDataURL("image/png"))
+      sessionStorage.setItem("moodboard_detectedMood", mood)
     }
 
     let idToSend = null
@@ -184,13 +197,12 @@ export default function Home() {
         {[1, 2, 3, 4, 5].map((star) => (
           <Star
             key={star}
-            className={`w-4 h-4 ${
-              star <= Math.floor(rating)
+            className={`w-4 h-4 ${star <= Math.floor(rating)
                 ? "fill-yellow-400 text-yellow-400"
                 : star - rating < 1
                   ? "fill-yellow-400 text-yellow-400 opacity-50"
                   : "text-gray-400"
-            }`}
+              }`}
           />
         ))}
       </div>
@@ -275,6 +287,8 @@ export default function Home() {
                     <div className="flex gap-3">
                       <button
                         onClick={() => {
+                          sessionStorage.removeItem("moodboard_capturedImage")
+                          sessionStorage.removeItem("moodboard_detectedMood")
                           setCapturedImage(null)
                           setDetectedMood(null)
                           setShowWebcam(false)
@@ -377,14 +391,12 @@ export default function Home() {
                 key={index}
                 onMouseEnter={() => setHoveredCard(index)}
                 onMouseLeave={() => setHoveredCard(null)}
-                className={`group relative p-8 rounded-2xl transition-all duration-300 cursor-pointer ${
-                  hoveredCard === index ? "transform scale-105" : ""
-                }`}
+                className={`group relative p-8 rounded-2xl transition-all duration-300 cursor-pointer ${hoveredCard === index ? "transform scale-105" : ""
+                  }`}
               >
                 <div className={`absolute inset-0 bg-gradient-to-br ${feature.gradient} opacity-0 group-hover:opacity-10 rounded-2xl transition-opacity`}></div>
-                <div className={`absolute inset-0 border rounded-2xl transition-colors ${
-                  hoveredCard === index ? `border-gradient-to-r ${feature.gradient}` : "border-slate-700/50"
-                }`}></div>
+                <div className={`absolute inset-0 border rounded-2xl transition-colors ${hoveredCard === index ? `border-gradient-to-r ${feature.gradient}` : "border-slate-700/50"
+                  }`}></div>
                 <div className="relative z-10">
                   <div className="text-4xl mb-4">{feature.icon}</div>
                   <h3 className="text-xl font-bold mb-3">{feature.title}</h3>
