@@ -9,37 +9,42 @@ export default function SongPage() {
   const mood = searchParam.get('mood');
   const [language, setLanguage] = useState("english");
   const [songs, setSongs] = useState([]);
-  const [offset, setOffset] = useState(0);
+  const [pageToken, setPageToken] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  let limit = 12;
-
-  const fetchSongs =async(reset=false)=>{
-      try {
-        const res = await fetch(`/api/spotify?mood=${mood}&lang=${language}&offset=${reset?0:offset}`);
-        const data = await res.json();
-        setSongs((prev)=>reset?data.tracks:[...prev,...data.tracks]);
-      } catch (err) {
-        console.error("Error fetching songs:", err);
+  const fetchSongs = async (reset = false) => {
+    if (loading) return;
+    setLoading(true);
+    try {
+      const currentToken = reset ? "" : pageToken;
+      const res = await fetch(`/api/youtube?mood=${mood}&lang=${language}&pageToken=${currentToken}`);
+      const data = await res.json();
+      
+      setSongs((prev) => reset ? (data.tracks || []) : [...prev, ...(data.tracks || [])]);
+      
+      if (data.nextPageToken) {
+        setPageToken(data.nextPageToken);
+      } else {
+        setPageToken(""); // no more pages
       }
-    };
+    } catch (err) {
+      console.error("Error fetching songs:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (!mood) return;
-    setOffset(0);
+    setPageToken("");
     fetchSongs(true);
-  }, [mood, language])
+  }, [mood, language]);
 
-  const loadSongs=()=>{
-    const newOffset = offset + limit;
-    setOffset(newOffset);
-  }
-
-  useEffect(()=>{
-    if(offset==0){
-      return;
+  const loadSongs = () => {
+    if (pageToken) {
+      fetchSongs(false);
     }
-    fetchSongs();
-  },[offset])
+  };
 
   return (
     <div className="min-h-screen bg-black text-white p-8">
@@ -63,33 +68,37 @@ export default function SongPage() {
 
       {/* Songs Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {songs.length === 0 && <p>No songs found.</p>}
+          {songs.length === 0 && !loading && <p>No songs found.</p>}
           {songs.map((song, index) => {
-            // Use song.id if available, otherwise fallback to a unique combination of name+index
             const key = song.id || `${song.name}-${index}`;
             return (
               <div
                 key={key}
                 className="bg-gray-900 rounded-lg overflow-hidden shadow-lg hover:scale-105 transition-transform"
               >
-                <Link href={song.url}>
+                <Link href={song.url} target="_blank" rel="noopener noreferrer">
                 <img
-                  src={song.albumImageUrl || "/placeholder.png"} // fallback image
+                  src={song.albumImageUrl || "/placeholder.png"} 
                   alt={song.name}
                   className="w-full h-48 object-cover"
                 />
                 </Link>
                 <div className="p-4">
-                  <h2 className="font-bold text-lg">{song.name}</h2>
-                  <p className="text-gray-400">{song.artist}</p>
+                  <h2 className="font-bold text-lg line-clamp-2">{song.name}</h2>
+                  <p className="text-gray-400 mt-1">{song.artist}</p>
                 </div>
               </div>
             );
           })}
         </div>
-        <div className="rounded-lg bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 px-3 py-2 w-max">
-          <button onClick={loadSongs}>Load more...</button>
-        </div>
+        
+        {loading && <p className="mt-6 text-gray-400">Loading songs...</p>}
+        
+        {pageToken && !loading && (
+          <div className="mt-8 rounded-lg bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 px-4 py-2 w-max cursor-pointer text-center">
+            <button onClick={loadSongs} className="font-semibold text-white">Load more...</button>
+          </div>
+        )}
     </div>
   );
 }
