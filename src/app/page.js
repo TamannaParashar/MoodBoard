@@ -215,7 +215,6 @@ export default function Home() {
       <nav className="fixed top-0 w-full z-40 bg-gradient-to-b from-slate-950/80 to-transparent backdrop-blur-md border-b border-slate-800/50">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="text-2xl font-bold flex items-center gap-2">
-            <Sparkles className="w-6 h-6 text-purple-400" />
             <span className="bg-gradient-to-r from-purple-400 via-pink-400 to-red-400 bg-clip-text text-transparent">
               MoodBoard
             </span>
@@ -485,7 +484,7 @@ export default function Home() {
 
       {/* Footer */}
       <footer className="border-t border-slate-800/50 py-12 px-6 md:px-8 text-center text-slate-400">
-        <p>&copy; {new Date().getFullYear()} MoodBoard | Understand Your Emotions</p>
+        <p>&copy; {new Date().getFullYear()} MoodBoard | All rights reserved</p>
       </footer>
     </main>
   )
