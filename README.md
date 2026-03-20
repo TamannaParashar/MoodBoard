@@ -1,12 +1,4 @@
-# MoodBoard – AI-Powered Emotional Wellness Platform
-
-MoodBoard is an interactive emotion-intelligence platform that uses face-expression recognition, AI-driven recommendations, and human-connection systems to improve emotional well-being. Using webcam-based mood detection, MoodBoard provides personalized songs, quotes, AI conversations, mood analytics, and a unique LifeLine system that connects users with trusted individuals during moments of emotional distress.
-
-## Demo Video
-
-[▶️ Click here to watch the demo](./assets/MoodBoard_demo.mp4)
-
----
+# MoodBoard
 
 ## 🚀 Key Features
 
@@ -15,17 +7,18 @@ MoodBoard is an interactive emotion-intelligence platform that uses face-express
 - Classifies mood (Happy, Sad, Neutral, Fear, etc.).
 - Triggers personalized content and actions based on the detected mood.
 
-### 🎵 2. Spotify-Powered Song Recommendations
-- Mood-based playlists generated using the Spotify API.
+### 🎵 2. YouTube-Powered Song Recommendations
+- Mood-based playlists generated using the YouTube API.
 - Songs update dynamically according to user emotions.
 
 ### 💬 3. Quote Recommendations via Quotify API
 - Provides motivational or mood-specific quotes.
 - Supports multiple moods with tailored inspiration.
 
-### 🤖 4. Talk to an AI Companion
+### 🤖 4. Talk to an AI Companion (Simli & Gemini)
 - Users can chat freely with an AI agent.
 - Powered by Gemini AI for emotional and contextual conversations.
+- Features Simli integration for real-time video/audio avatar interactions.
 - Natural loop: user talks → AI responds → repeat.
 
 ### 📊 5. Mood Analytics Dashboard
@@ -57,7 +50,8 @@ MoodBoard is an interactive emotion-intelligence platform that uses face-express
 ### **Backend**
 - Next.js 
 - Gemini API (AI conversational engine)  
-- Spotify API  
+- YouTube API (Song recommendations)
+- Simli API (AI Avatar)
 - Quotify API  
 - Face Expression Model  
 
@@ -73,9 +67,9 @@ User → Webcam → Emotion Model → UI updates mood.
 
 ### 2. Content Generation  
 Based on mood:  
-- Spotify for songs  
+- YouTube API for songs  
 - Quotify for quotes  
-- Gemini for AI conversation  
+- Gemini & Simli for AI video avatar conversation  
 - Chart.js for analytics  
 
 ### 3. LifeLine System  
@@ -109,8 +103,12 @@ moodboard/
 │   │   │   ├── connectionMsg/
 │   │   │   ├── getConnections/
 │   │   │   ├── getMood/
+│   │   │   ├── message/
 │   │   │   ├── quotes/
-│   │   │   └── spotify/
+│   │   │   ├── tts/
+│   │   │   ├── userChat/
+│   │   │   └── youtube/
+│   │   ├── chat/
 │   │   ├── Components/
 │   │   ├── interact/
 │   │   ├── model/
@@ -119,7 +117,8 @@ moodboard/
 │   │   └── utils/
 │   ├── components/
 │   │   └── ui/
-│   └── lib/
+│   ├── lib/
+│   └── models/
 └── README.md
 ```
 ---
@@ -141,10 +140,10 @@ moodboard/
 
 ---
 
-# 🧠 AI Logic (Gemini)
+# 🧠 AI Logic (Gemini & Simli)
 
 ### AI Chat Loop
-Gemini → user → Gemini → user ...
+Simli Avatar / Gemini → user → Simli Avatar / Gemini → user ...
 
 AI provides:  
 - Emotion-aware responses  
@@ -182,9 +181,10 @@ npm run dev
 ### 3. Setup environment variables
 ```sh
 MONGO_URL=your_mongo_url
-CLIENT_ID=xxxx
-CLIENT_SECRET=xxxx
+YT_API_KEY=xxxx
 GEMINI_API_KEY=xxxx
+NEXT_PUBLIC_SIMLI_API_KEY=xxxx
+NEXT_PUBLIC_SIMLI_FACE_KEY=xxxx
 ```
 
 # 📌 Future Enhancements
