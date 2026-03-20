@@ -1,4 +1,9 @@
 # MoodBoard
+## 🎥 Demo Video
+
+<video src="assets/proj_demo.mp4" controls="controls" style="max-width: 100%; max-height: 640px;">
+  Your browser does not support the video tag.
+</video>
 
 ## 🚀 Key Features
 
