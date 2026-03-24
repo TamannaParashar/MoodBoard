@@ -5,7 +5,7 @@ import { Doughnut } from "react-chartjs-2"
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from "chart.js"
 import { toast, Toaster } from "sonner"
 import { useRouter } from "next/navigation"
-import { X, Heart, Users, Shield, TrendingUp, Send, ArrowRight } from "lucide-react"
+import { X, Heart, Users, Shield, TrendingUp, Send, ArrowRight, Trash2, Edit2, Check } from "lucide-react"
 
 ChartJS.register(ArcElement, Tooltip, Legend)
 
@@ -24,6 +24,9 @@ export default function AnalyseMood() {
   const [connectionsUserId, setConnectionsUserId] = useState("")
   const [connections, setConnections] = useState([])
   const [connectionsLoading, setConnectionsLoading] = useState(false)
+  const [hasSearchedConnections, setHasSearchedConnections] = useState(false)
+  const [editingConnectionId, setEditingConnectionId] = useState(null)
+  const [editName, setEditName] = useState("")
 
   const router = useRouter()
 
@@ -44,6 +47,7 @@ export default function AnalyseMood() {
       }
 
       setConnections(data.connections || [])
+      setHasSearchedConnections(true)
     } catch {
       toast.error("Something went wrong")
     } finally {
@@ -135,6 +139,61 @@ export default function AnalyseMood() {
   const handleConnect = (connectionUserId) => {
     const roomId = [userId, connectionUserId].sort().join("_")
     router.push(`/chat?roomId=${roomId}&from=${userId}&to=${connectionUserId}`)
+  }
+
+  const handleDeleteConnection = async (connectionUserId) => {
+    try {
+      setConnectionsLoading(true)
+      const res = await fetch(`/api/deleteConnection?ownerUserId=${connectionsUserId}&connectionUserId=${connectionUserId}`, {
+        method: "DELETE",
+      })
+      const data = await res.json()
+
+      if (!res.ok) {
+        toast.error(data.message || "Failed to delete connection")
+        return
+      }
+
+      toast.success("Connection deleted successfully")
+      setConnections((prev) => prev.filter((c) => c.userId !== connectionUserId))
+    } catch {
+      toast.error("Something went wrong while deleting")
+    } finally {
+      setConnectionsLoading(false)
+    }
+  }
+
+  const handleEditConnection = (conn) => {
+    setEditingConnectionId(conn.userId)
+    setEditName(conn.name || "")
+  }
+
+  const handleSaveEdit = async (connectionUserId) => {
+    try {
+      setConnectionsLoading(true)
+      const res = await fetch(`/api/updateConnection?ownerUserId=${connectionsUserId}&connectionUserId=${connectionUserId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: editName })
+      })
+      const data = await res.json()
+
+      if (!res.ok) {
+        toast.error(data.message || "Failed to rename connection")
+        return
+      }
+
+      toast.success("Connection renamed successfully")
+      setConnections((prev) =>
+        prev.map((c) => (c.userId === connectionUserId ? { ...c, name: editName } : c))
+      )
+      setEditingConnectionId(null)
+      setEditName("")
+    } catch {
+      toast.error("Something went wrong while renaming")
+    } finally {
+      setConnectionsLoading(false)
+    }
   }
 
   const handleAnalyze = async () => {
@@ -396,7 +455,7 @@ export default function AnalyseMood() {
     return (
       <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
         <div className="bg-gradient-to-br from-slate-900 to-slate-800 p-8 rounded-2xl shadow-2xl max-w-md w-full text-white border border-slate-700">
-          {connections.length === 0 ? (
+          {!hasSearchedConnections ? (
             <div className="space-y-6">
               <h3 className="text-xl font-bold">My Connections</h3>
               <div>
@@ -411,7 +470,10 @@ export default function AnalyseMood() {
               </div>
               <div className="flex gap-3 justify-end">
                 <button
-                  onClick={() => setShowConnections(false)}
+                  onClick={() => {
+                    setShowConnections(false)
+                    setHasSearchedConnections(false)
+                  }}
                   className="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg font-medium transition-colors"
                 >
                   Cancel
@@ -428,30 +490,93 @@ export default function AnalyseMood() {
           ) : (
             <div className="space-y-6">
               <h3 className="text-xl font-bold mb-4">My Connections</h3>
-              <div className="space-y-3 max-h-96 overflow-y-auto">
-                {connections.map((conn) => (
-                  <div
-                    key={conn.userId}
-                    className="flex items-center justify-between bg-slate-800/60 p-4 rounded-lg border border-slate-700 hover:border-purple-400/50 transition-colors"
-                  >
-                    <div>
-                      <p className="font-semibold">{conn.name || "Unnamed"}</p>
-                      <p className="text-xs text-slate-400">ID: {conn.userId}</p>
-                    </div>
-                    <button
-                      className="px-3 py-1.5 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 rounded-lg text-sm font-semibold transition-colors"
-                      onClick={() => handleConnect(conn.userId)}
+              {connections.length === 0 ? (
+                <div className="py-8 text-center border border-dashed border-slate-700 rounded-xl bg-slate-800/30">
+                  <Users className="w-12 h-12 text-slate-500 mx-auto mb-3 opacity-50" />
+                  <p className="text-slate-300 font-semibold mb-1">You don't have any connections yet.</p>
+                  <p className="text-sm text-slate-500">Share your Lifelong code to start connecting!</p>
+                </div>
+              ) : (
+                <div className="space-y-3 max-h-96 overflow-y-auto">
+                  {connections.map((conn) => (
+                    <div
+                      key={conn.userId}
+                      className="flex items-center justify-between bg-slate-800/60 p-4 rounded-lg border border-slate-700 hover:border-purple-400/50 transition-colors"
                     >
-                      Chat
-                    </button>
-                  </div>
-                ))}
-              </div>
+                      {editingConnectionId === conn.userId ? (
+                        <div className="flex items-center gap-2 flex-1 mr-4">
+                          <input
+                            type="text"
+                            value={editName}
+                            onChange={(e) => setEditName(e.target.value)}
+                            className="w-full px-3 py-1.5 bg-slate-900/50 border border-slate-600 rounded-lg text-white text-sm focus:outline-none focus:border-purple-400"
+                            autoFocus
+                          />
+                        </div>
+                      ) : (
+                        <div>
+                          <p className="font-semibold">{conn.name || "Unnamed"}</p>
+                          <p className="text-xs text-slate-400">ID: {conn.userId}</p>
+                        </div>
+                      )}
+                      
+                      <div className="flex items-center gap-2">
+                        {editingConnectionId === conn.userId ? (
+                          <>
+                            <button
+                              className="p-1.5 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 rounded-lg text-sm font-semibold transition-colors flex items-center justify-center"
+                              onClick={() => handleSaveEdit(conn.userId)}
+                              title="Save name"
+                              disabled={connectionsLoading}
+                            >
+                              <Check className="w-4 h-4" />
+                            </button>
+                            <button
+                              className="p-1.5 bg-slate-600 hover:bg-slate-500 rounded-lg text-sm font-semibold transition-colors flex items-center justify-center"
+                              onClick={() => {
+                                setEditingConnectionId(null)
+                                setEditName("")
+                              }}
+                              title="Cancel"
+                            >
+                              <X className="w-4 h-4" />
+                            </button>
+                          </>
+                        ) : (
+                          <>
+                            <button
+                              className="px-3 py-1.5 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 rounded-lg text-sm font-semibold transition-colors"
+                              onClick={() => handleConnect(conn.userId)}
+                            >
+                              Chat
+                            </button>
+                            <button
+                              className="p-1.5 bg-slate-700 hover:bg-slate-600 rounded-lg text-sm font-semibold transition-colors flex items-center justify-center"
+                              onClick={() => handleEditConnection(conn)}
+                              title="Edit name"
+                            >
+                              <Edit2 className="w-4 h-4 text-slate-300" />
+                            </button>
+                            <button
+                              className="p-1.5 bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 rounded-lg text-sm font-semibold transition-colors flex items-center justify-center"
+                              onClick={() => handleDeleteConnection(conn.userId)}
+                              title="Delete connection"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
               <button
                 onClick={() => {
                   setShowConnections(false)
                   setConnections([])
                   setConnectionsUserId("")
+                  setHasSearchedConnections(false)
                 }}
                 className="w-full px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg font-medium transition-colors"
               >
