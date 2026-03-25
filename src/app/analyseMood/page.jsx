@@ -516,7 +516,6 @@ export default function AnalyseMood() {
                       ) : (
                         <div>
                           <p className="font-semibold">{conn.name || "Unnamed"}</p>
-                          <p className="text-xs text-slate-400">ID: {conn.userId}</p>
                         </div>
                       )}
                       
