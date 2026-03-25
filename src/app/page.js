@@ -198,10 +198,10 @@ export default function Home() {
           <Star
             key={star}
             className={`w-4 h-4 ${star <= Math.floor(rating)
-                ? "fill-yellow-400 text-yellow-400"
-                : star - rating < 1
-                  ? "fill-yellow-400 text-yellow-400 opacity-50"
-                  : "text-gray-400"
+              ? "fill-yellow-400 text-yellow-400"
+              : star - rating < 1
+                ? "fill-yellow-400 text-yellow-400 opacity-50"
+                : "text-gray-400"
               }`}
           />
         ))}
@@ -323,27 +323,33 @@ export default function Home() {
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                             <button
                               onClick={songClick}
-                              className="group px-4 py-3 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 rounded-lg font-semibold transition-all transform hover:scale-105 flex items-center justify-center gap-2"
+                              className="group px-4 py-3 bg-slate-800/80 hover:bg-purple-900/30 border border-slate-700 hover:border-purple-500/50 rounded-xl font-semibold text-slate-300 hover:text-white transition-all transform hover:scale-105 flex items-center justify-center shadow-md"
                             >
-                              <span>🎵</span> Get Songs
+                              Get Songs
                             </button>
                             <button
                               onClick={quotesClick}
-                              className="group px-4 py-3 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 rounded-lg font-semibold transition-all transform hover:scale-105 flex items-center justify-center gap-2"
+                              className="group px-4 py-3 bg-slate-800/80 hover:bg-pink-900/30 border border-slate-700 hover:border-pink-500/50 rounded-xl font-semibold text-slate-300 hover:text-white transition-all transform hover:scale-105 flex items-center justify-center shadow-md"
                             >
-                              <span>✨</span> Get Quotes
+                              Get Quotes
                             </button>
                             <button
                               onClick={aiInteract}
-                              className="group px-4 py-3 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 rounded-lg font-semibold transition-all transform hover:scale-105 flex items-center justify-center gap-2"
+                              className="group px-4 py-3 bg-slate-800/80 hover:bg-purple-900/30 border border-slate-700 hover:border-purple-500/50 rounded-xl font-semibold text-slate-300 hover:text-white transition-all transform hover:scale-105 flex items-center justify-center shadow-md"
                             >
-                              <span>💬</span> Talk with AI
+                              Talk with AI
                             </button>
                             <button
                               onClick={() => router.push("/analyseMood")}
-                              className="group px-4 py-3 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 rounded-lg font-semibold transition-all transform hover:scale-105 flex items-center justify-center gap-2"
+                              className="group px-4 py-3 bg-slate-800/80 hover:bg-pink-900/30 border border-slate-700 hover:border-pink-500/50 rounded-xl font-semibold text-slate-300 hover:text-white transition-all transform hover:scale-105 flex items-center justify-center shadow-md"
                             >
-                              <span>📊</span> Analyse Mood
+                              Analyse Mood
+                            </button>
+                            <button
+                              onClick={() => router.push(`/motivation?mood=${detectedMood}`)}
+                              className="group md:col-span-2 px-4 py-4 bg-gradient-to-r from-purple-600/20 to-pink-600/20 hover:from-purple-600/40 hover:to-pink-600/40 border border-purple-500/30 hover:border-purple-400/60 rounded-xl font-bold text-white transition-all transform hover:scale-[1.02] flex items-center justify-center shadow-lg hover:shadow-purple-500/20"
+                            >
+                              Motivation Room (AI Story)
                             </button>
                           </div>
                         )}
