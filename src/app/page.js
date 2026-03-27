@@ -177,6 +177,7 @@ export default function Home() {
         idToSend = Math.floor(10000 + Math.random() * 90000)
         alert(`Your new unique ID is: ${idToSend}`)
       }
+      localStorage.setItem("userId", idToSend)
     }
     const toSend = idToSend ? { mood, userId: idToSend } : { mood }
     const data = await fetch("/api/addDetectedMood", {

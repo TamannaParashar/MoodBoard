@@ -24,6 +24,8 @@ export default function InteractPage() {
   const [inputText, setInputText] = useState("");
   const [isAiThinking, setIsAiThinking] = useState(false);
   const [listening, setListening] = useState(false);
+  const [userId, setUserId] = useState(null);
+  const [historyLoaded, setHistoryLoaded] = useState(false);
 
   // Refs
   const videoRef = useRef(null);
@@ -36,6 +38,59 @@ export default function InteractPage() {
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [conversation]);
+
+  // Load userId and fetch history
+  useEffect(() => {
+    const storedUserId = localStorage.getItem("userId");
+    if (storedUserId) {
+      setUserId(storedUserId);
+      fetchHistory(storedUserId);
+    } else {
+      setHistoryLoaded(true);
+    }
+  }, []);
+
+  const fetchHistory = async (uid) => {
+    const roomId = `AI_${uid}`;
+    try {
+      const res = await fetch(`/api/userChat/history?roomId=${roomId}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.messages && data.messages.length > 0) {
+          const formattedHistory = data.messages.map(m => ({
+            sender: m.senderId === uid ? "User" : "AI",
+            text: m.message
+          }));
+          setConversation(formattedHistory);
+        }
+      }
+    } catch (err) {
+      console.error("Failed to fetch history:", err);
+    } finally {
+      setHistoryLoaded(true);
+    }
+  };
+
+  const saveMessage = async (msgText, senderId, receiverId) => {
+    const currentUserId = userId || localStorage.getItem("userId");
+    if (!currentUserId) return;
+    
+    const roomId = `AI_${currentUserId}`;
+    try {
+      await fetch("/api/userChat/send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          roomId,
+          senderId,
+          receiverId,
+          message: msgText
+        })
+      });
+    } catch (err) {
+      console.error("Failed to save message:", err);
+    }
+  };
 
   // Clean up on component unmount
   useEffect(() => {
@@ -222,21 +277,27 @@ export default function InteractPage() {
     }
   };
 
-  const handleAIResponse = async (userText) => {
+  const handleAIResponse = async (userText, updatedConversation) => {
     if (!userText) return;
     try {
       setIsAiThinking(true);
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        // Pass a truncated conversation history to Gemini
-        body: JSON.stringify({ text: userText, conversation: conversation.slice(-5) }),
+        // Use the passed history instead of state to avoid stale issues
+        body: JSON.stringify({ text: userText, conversation: (updatedConversation || conversation).slice(-10) }),
       });
       const data = await res.json();
       const responseText = data.responseText || "Hmm, I didn't get that. Can you say it again?";
 
       setConversation((prev) => [...prev, { sender: "AI", text: responseText }]);
       speakViaSimli(responseText);
+      
+      // Save AI response to DB
+      const currentUserId = userId || localStorage.getItem("userId");
+      if (currentUserId) {
+        saveMessage(responseText, "AI", currentUserId);
+      }
     } catch (err) {
       console.error("AI error:", err);
       speakViaSimli("Oops, I encountered an error responding.");
@@ -272,8 +333,17 @@ export default function InteractPage() {
     recognition.onresult = (event) => {
       const userText = event.results[0][0].transcript;
       if (userText.trim()) {
-        setConversation((prev) => [...prev, { sender: "User", text: userText }]);
-        handleAIResponse(userText);
+        const newMessage = { sender: "User", text: userText };
+        setConversation((prev) => [...prev, newMessage]);
+        
+        // Fix stale state: pass the actual update
+        handleAIResponse(userText, [...conversation, newMessage]);
+        
+        // Save user message to DB
+        const currentUserId = userId || localStorage.getItem("userId");
+        if (currentUserId) {
+          saveMessage(userText, currentUserId, "AI");
+        }
       }
     };
 
@@ -290,10 +360,19 @@ export default function InteractPage() {
     e.preventDefault();
     if (!inputText.trim() || !isConnected || isAiThinking) return;
 
-    setConversation((prev) => [...prev, { sender: "User", text: inputText }]);
-    const currentText = inputText;
+    const userText = inputText;
+    const newMessage = { sender: "User", text: userText };
+    setConversation((prev) => [...prev, newMessage]);
     setInputText("");
-    handleAIResponse(currentText);
+    
+    // Fix stale state: pass the actual update
+    handleAIResponse(userText, [...conversation, newMessage]);
+    
+    // Save user message to DB
+    const currentUserId = userId || localStorage.getItem("userId");
+    if (currentUserId) {
+      saveMessage(userText, currentUserId, "AI");
+    }
   };
 
   return (
