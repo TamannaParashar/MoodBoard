@@ -10,6 +10,8 @@ export default function MotivationRoom() {
   const router = useRouter();
 
   const [story, setStory] = useState([]);
+  const [heroImage, setHeroImage] = useState("");
+  const [heroName, setHeroName] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -27,6 +29,8 @@ export default function MotivationRoom() {
         if (!res.ok) throw new Error(data.error || "Failed to load story");
         
         setStory(data.story || []);
+        setHeroImage(data.heroImage || "");
+        setHeroName(data.heroName || "");
       } catch (err) {
         setError(err.message);
       } finally {
@@ -107,13 +111,26 @@ export default function MotivationRoom() {
             {/* Carousel Container */}
             <div className="relative w-full aspect-video md:aspect-[21/9] max-h-[60vh] rounded-3xl overflow-hidden shadow-2xl border border-slate-800 group bg-slate-900">
               
-              {/* Image from LoremFlickr */}
-              <img 
-                src={`https://loremflickr.com/1280/720/${encodeURIComponent((story[currentSlide]?.imagePrompt || "beautiful scenery").split(" ").join(","))}?lock=${currentSlide + 100}`}
-                alt="Story illustration"
-                className="w-full h-full object-cover transition-opacity duration-700"
-                key={currentSlide} // Forces re-render/animation on slide change
-              />
+              {/* Real picture of the hero currently being talked about */}
+              {heroImage ? (
+                <>
+                  {/* Beautiful Blurred Ambient Background */}
+                  <div 
+                    className="absolute inset-0 opacity-40 blur-2xl scale-110"
+                    style={{ backgroundImage: `url(${heroImage})`, backgroundSize: 'cover', backgroundPosition: 'center' }}
+                  ></div>
+                  
+                  {/* Clean uncropped hero image */}
+                  <img 
+                    src={heroImage}
+                    alt={heroName || "Hero"}
+                    className="relative w-full h-full object-contain px-4 py-6 md:py-8 z-0 transition-opacity duration-700 drop-shadow-2xl"
+                    key={"hero-image-" + currentSlide}
+                  />
+                </>
+              ) : (
+                <div className="w-full h-full bg-slate-800 animate-pulse"></div>
+              )}
 
               {/* Gradient Overlay for Text Readability */}
               <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent"></div>
