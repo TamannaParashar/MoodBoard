@@ -1,4 +1,4 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
+ import { GoogleGenerativeAI } from "@google/generative-ai";
 
 export async function GET(req) {
   const mood = req.nextUrl.searchParams.get("mood");

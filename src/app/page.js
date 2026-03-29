@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
-import { Camera, X, Star, ArrowRight, Zap, Shield, Sparkles, Heart } from "lucide-react"
+import { Camera, X, Star, ArrowRight, Zap, Shield, Sparkles, Heart, Smile } from "lucide-react"
 import * as faceapi from "face-api.js"
 import "./style.css"
 import { useRouter } from "next/navigation"
@@ -85,6 +85,7 @@ const reviews = [
 
 export default function Home() {
   const [showWebcam, setShowWebcam] = useState(false)
+  const [showManualAdd, setShowManualAdd] = useState(false)
   const [capturedImage, setCapturedImage] = useState(null)
   const [detectedMood, setDetectedMood] = useState(null)
   const [showSongBtn, setShowSongBtn] = useState(false)
@@ -140,6 +141,37 @@ export default function Home() {
     }
   }, [showWebcam])
 
+  const saveMood = async (moodToSave) => {
+    let idToSend = null
+    if (traceOption === "trace") {
+      const userInput = prompt("Enter your unique ID (or leave empty for New User):")
+      if (userInput && userInput.trim() !== "") {
+        idToSend = userInput.trim()
+      } else {
+        idToSend = Math.floor(10000 + Math.random() * 90000)
+        alert(`Your new unique ID is: ${idToSend}`)
+      }
+      localStorage.setItem("userId", idToSend)
+    }
+    const toSend = idToSend ? { mood: moodToSave, userId: idToSend } : { mood: moodToSave }
+    const data = await fetch("/api/addDetectedMood", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(toSend)
+    })
+    await data.json()
+  }
+
+  const handleManualMoodSelect = async (mood) => {
+    setDetectedMood(mood)
+    setShowSongBtn(true)
+    sessionStorage.setItem("moodboard_detectedMood", mood)
+    // Clear captured image if any
+    sessionStorage.removeItem("moodboard_capturedImage")
+    setCapturedImage(null)
+    await saveMood(mood)
+  }
+
   const handleCapture = async () => {
     if (!videoRef.current) return
 
@@ -168,29 +200,58 @@ export default function Home() {
       sessionStorage.setItem("moodboard_detectedMood", mood)
     }
 
-    let idToSend = null
-    if (traceOption === "trace") {
-      const userInput = prompt("Enter your unique ID (or leave empty for New User):")
-      if (userInput && userInput.trim() !== "") {
-        idToSend = userInput.trim()
-      } else {
-        idToSend = Math.floor(10000 + Math.random() * 90000)
-        alert(`Your new unique ID is: ${idToSend}`)
-      }
-      localStorage.setItem("userId", idToSend)
-    }
-    const toSend = idToSend ? { mood, userId: idToSend } : { mood }
-    const data = await fetch("/api/addDetectedMood", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(toSend)
-    })
-    const res = await data.json()
+    await saveMood(mood)
   }
 
   const songClick = () => router.push(`/song?mood=${detectedMood}`)
   const quotesClick = () => router.push(`/quotes?mood=${detectedMood}`)
   const aiInteract = () => router.push(`/interact?mood=${detectedMood}`)
+
+  const renderActionButtons = () => (
+    <div className="mt-8 p-6 bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-400/30 rounded-xl">
+      <div className="text-center mb-6">
+        <div className="inline-block px-4 py-2 bg-gradient-to-r from-purple-400 to-pink-400 rounded-full mb-3">
+          <p className="text-slate-900 font-bold text-lg capitalize">{detectedMood}</p>
+        </div>
+        <p className="text-slate-300 text-sm">Your current emotional state</p>
+      </div>
+
+      {showSongBtn && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <button
+            onClick={songClick}
+            className="group px-4 py-3 bg-slate-800/80 hover:bg-purple-900/30 border border-slate-700 hover:border-purple-500/50 rounded-xl font-semibold text-slate-300 hover:text-white transition-all transform hover:scale-105 flex items-center justify-center shadow-md"
+          >
+            Get Songs
+          </button>
+          <button
+            onClick={quotesClick}
+            className="group px-4 py-3 bg-slate-800/80 hover:bg-pink-900/30 border border-slate-700 hover:border-pink-500/50 rounded-xl font-semibold text-slate-300 hover:text-white transition-all transform hover:scale-105 flex items-center justify-center shadow-md"
+          >
+            Get Quotes
+          </button>
+          <button
+            onClick={aiInteract}
+            className="group px-4 py-3 bg-slate-800/80 hover:bg-purple-900/30 border border-slate-700 hover:border-purple-500/50 rounded-xl font-semibold text-slate-300 hover:text-white transition-all transform hover:scale-105 flex items-center justify-center shadow-md"
+          >
+            Talk with AI
+          </button>
+          <button
+            onClick={() => router.push("/analyseMood")}
+            className="group px-4 py-3 bg-slate-800/80 hover:bg-pink-900/30 border border-slate-700 hover:border-pink-500/50 rounded-xl font-semibold text-slate-300 hover:text-white transition-all transform hover:scale-105 flex items-center justify-center shadow-md"
+          >
+            Analyse Mood
+          </button>
+          <button
+            onClick={() => router.push(`/motivation?mood=${detectedMood}`)}
+            className="group md:col-span-2 px-4 py-4 bg-gradient-to-r from-purple-600/20 to-pink-600/20 hover:from-purple-600/40 hover:to-pink-600/40 border border-purple-500/30 hover:border-purple-400/60 rounded-xl font-bold text-white transition-all transform hover:scale-[1.02] flex items-center justify-center shadow-lg hover:shadow-purple-500/20"
+          >
+            Motivation Room (AI Story)
+          </button>
+        </div>
+      )}
+    </div>
+  )
 
   const renderStars = (rating) => {
     return (
@@ -247,18 +308,43 @@ export default function Home() {
             <p className="text-xl text-slate-300 mb-8 max-w-2xl mx-auto leading-relaxed">
               Capture your mood, understand your emotions, and get personalized recommendations for your mental wellbeing
             </p>
-            <button
-              onClick={() => setShowWebcam(!showWebcam)}
-              className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 rounded-lg font-bold text-lg transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl"
-            >
-              <Camera className="w-6 h-6" />
-              {showWebcam ? "Close Webcam" : "Start Analysis"}
-              <ArrowRight className="w-5 h-5" />
-            </button>
+            <div className="flex flex-col sm:flex-row justify-center gap-4">
+              <button
+                onClick={() => {
+                  setShowWebcam(!showWebcam)
+                  if (!showWebcam) setShowManualAdd(false)
+                }}
+                className={`inline-flex items-center justify-center gap-2 px-8 py-4 rounded-lg font-bold text-lg transition-all duration-300 transform hover:scale-105 shadow-lg ${
+                  showWebcam 
+                    ? "bg-slate-800 hover:bg-slate-700 border border-slate-600 text-white" 
+                    : "bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white"
+                }`}
+              >
+                <Camera className="w-6 h-6" />
+                {showWebcam ? "Close Webcam" : "Open Webcam"}
+                <ArrowRight className="w-5 h-5" />
+              </button>
+              
+              <button
+                onClick={() => {
+                  setShowManualAdd(!showManualAdd)
+                  if (!showManualAdd) setShowWebcam(false)
+                }}
+                className={`inline-flex items-center justify-center gap-2 px-8 py-4 rounded-lg font-bold text-lg transition-all duration-300 transform hover:scale-105 shadow-lg ${
+                  showManualAdd 
+                    ? "bg-slate-800 hover:bg-slate-700 border border-slate-600 text-white" 
+                    : "bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white"
+                }`}
+              >
+                <Smile className="w-6 h-6" />
+                {showManualAdd ? "Close Manual" : "Add Manually"}
+                <ArrowRight className="w-5 h-5" />
+              </button>
+            </div>
           </div>
 
-          {/* Webcam Section */}
-          {showWebcam && (
+          {/* Analysis Section */}
+          {(showWebcam || showManualAdd) && (
             <div className="relative z-10 max-w-3xl mx-auto mb-20">
               <div className="bg-gradient-to-b from-slate-800/50 to-slate-900/50 backdrop-blur-xl border border-slate-700/50 rounded-2xl p-8 shadow-2xl">
                 <div className="mb-6">
@@ -273,110 +359,88 @@ export default function Home() {
                   </select>
                 </div>
 
-                {capturedImage ? (
-                  <div className="space-y-6">
-                    <div className="relative rounded-xl overflow-hidden shadow-xl">
-                      <img
-                        src={capturedImage}
-                        alt="Captured"
-                        className="w-full object-cover max-h-96"
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
-                    </div>
-
-                    <div className="flex gap-3">
-                      <button
-                        onClick={() => {
-                          sessionStorage.removeItem("moodboard_capturedImage")
-                          sessionStorage.removeItem("moodboard_detectedMood")
-                          setCapturedImage(null)
-                          setDetectedMood(null)
-                          setShowWebcam(false)
-                          setTimeout(() => setShowWebcam(true), 10)
-                        }}
-                        className="flex-1 px-4 py-3 bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 rounded-lg font-semibold transition-all"
-                      >
-                        Retake
-                      </button>
-                      <button
-                        onClick={() => {
-                          const link = document.createElement("a")
-                          link.href = capturedImage
-                          link.download = `mood-${Date.now()}.png`
-                          link.click()
-                        }}
-                        className="flex-1 px-4 py-3 bg-gradient-to-r from-pink-600 to-pink-700 hover:from-pink-700 hover:to-pink-800 rounded-lg font-semibold transition-all"
-                      >
-                        Download
-                      </button>
-                    </div>
-
-                    {detectedMood && (
-                      <div className="mt-8 p-6 bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-400/30 rounded-xl">
-                        <div className="text-center mb-6">
-                          <div className="inline-block px-4 py-2 bg-gradient-to-r from-purple-400 to-pink-400 rounded-full mb-3">
-                            <p className="text-slate-900 font-bold text-lg capitalize">{detectedMood}</p>
-                          </div>
-                          <p className="text-slate-300 text-sm">Your current emotional state</p>
-                        </div>
-
-                        {showSongBtn && (
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                            <button
-                              onClick={songClick}
-                              className="group px-4 py-3 bg-slate-800/80 hover:bg-purple-900/30 border border-slate-700 hover:border-purple-500/50 rounded-xl font-semibold text-slate-300 hover:text-white transition-all transform hover:scale-105 flex items-center justify-center shadow-md"
-                            >
-                              Get Songs
-                            </button>
-                            <button
-                              onClick={quotesClick}
-                              className="group px-4 py-3 bg-slate-800/80 hover:bg-pink-900/30 border border-slate-700 hover:border-pink-500/50 rounded-xl font-semibold text-slate-300 hover:text-white transition-all transform hover:scale-105 flex items-center justify-center shadow-md"
-                            >
-                              Get Quotes
-                            </button>
-                            <button
-                              onClick={aiInteract}
-                              className="group px-4 py-3 bg-slate-800/80 hover:bg-purple-900/30 border border-slate-700 hover:border-purple-500/50 rounded-xl font-semibold text-slate-300 hover:text-white transition-all transform hover:scale-105 flex items-center justify-center shadow-md"
-                            >
-                              Talk with AI
-                            </button>
-                            <button
-                              onClick={() => router.push("/analyseMood")}
-                              className="group px-4 py-3 bg-slate-800/80 hover:bg-pink-900/30 border border-slate-700 hover:border-pink-500/50 rounded-xl font-semibold text-slate-300 hover:text-white transition-all transform hover:scale-105 flex items-center justify-center shadow-md"
-                            >
-                              Analyse Mood
-                            </button>
-                            <button
-                              onClick={() => router.push(`/motivation?mood=${detectedMood}`)}
-                              className="group md:col-span-2 px-4 py-4 bg-gradient-to-r from-purple-600/20 to-pink-600/20 hover:from-purple-600/40 hover:to-pink-600/40 border border-purple-500/30 hover:border-purple-400/60 rounded-xl font-bold text-white transition-all transform hover:scale-[1.02] flex items-center justify-center shadow-lg hover:shadow-purple-500/20"
-                            >
-                              Motivation Room (AI Story)
-                            </button>
-                          </div>
-                        )}
+                {showWebcam ? (
+                  capturedImage ? (
+                    <div className="space-y-6">
+                      <div className="relative rounded-xl overflow-hidden shadow-xl">
+                        <img
+                          src={capturedImage}
+                          alt="Captured"
+                          className="w-full object-cover max-h-96"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
                       </div>
-                    )}
-                  </div>
+
+                      <div className="flex gap-3">
+                        <button
+                          onClick={() => {
+                            sessionStorage.removeItem("moodboard_capturedImage")
+                            sessionStorage.removeItem("moodboard_detectedMood")
+                            setCapturedImage(null)
+                            setDetectedMood(null)
+                            setShowWebcam(false)
+                            setTimeout(() => setShowWebcam(true), 10)
+                          }}
+                          className="flex-1 px-4 py-3 bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 rounded-lg font-semibold transition-all"
+                        >
+                          Retake
+                        </button>
+                        <button
+                          onClick={() => {
+                            const link = document.createElement("a")
+                            link.href = capturedImage
+                            link.download = `mood-${Date.now()}.png`
+                            link.click()
+                          }}
+                          className="flex-1 px-4 py-3 bg-gradient-to-r from-pink-600 to-pink-700 hover:from-pink-700 hover:to-pink-800 rounded-lg font-semibold transition-all"
+                        >
+                          Download
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-6">
+                      <div className="relative rounded-xl overflow-hidden bg-slate-900/50">
+                        <video
+                          ref={videoRef}
+                          autoPlay
+                          playsInline
+                          className="w-full rounded-lg"
+                        />
+                        <div className="absolute inset-0 border-2 border-purple-400/20 rounded-lg"></div>
+                      </div>
+                      <button
+                        onClick={handleCapture}
+                        className="w-full px-4 py-4 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 rounded-lg font-bold text-lg flex items-center justify-center gap-2 transition-all transform hover:scale-105"
+                      >
+                        <Camera className="w-5 h-5" />
+                        Capture Image
+                      </button>
+                    </div>
+                  )
                 ) : (
                   <div className="space-y-6">
-                    <div className="relative rounded-xl overflow-hidden bg-slate-900/50">
-                      <video
-                        ref={videoRef}
-                        autoPlay
-                        playsInline
-                        className="w-full rounded-lg"
-                      />
-                      <div className="absolute inset-0 border-2 border-purple-400/20 rounded-lg"></div>
+                    <h3 className="text-xl font-bold text-center">How are you feeling right now?</h3>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      {["happy", "sad", "angry", "fearful", "disgusted", "surprised", "neutral"].map((mood) => (
+                        <button
+                          key={mood}
+                          onClick={() => handleManualMoodSelect(mood)}
+                          className={`px-4 py-3 capitalize rounded-lg font-semibold transition-all ${
+                            detectedMood === mood 
+                              ? "bg-purple-600 border-transparent shadow-lg shadow-purple-500/30 text-white" 
+                              : "bg-slate-700/50 hover:bg-slate-600 border border-slate-600 text-slate-300 hover:text-white"
+                          }`}
+                        >
+                          {mood}
+                        </button>
+                      ))}
                     </div>
-                    <button
-                      onClick={handleCapture}
-                      className="w-full px-4 py-4 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 rounded-lg font-bold text-lg flex items-center justify-center gap-2 transition-all transform hover:scale-105"
-                    >
-                      <Camera className="w-5 h-5" />
-                      Capture Image
-                    </button>
                   </div>
                 )}
+
+                {detectedMood && renderActionButtons()}
+
               </div>
             </div>
           )}
@@ -478,7 +542,10 @@ export default function Home() {
               <h2 className="text-4xl md:text-5xl font-bold mb-6">Ready to Understand Your Emotions?</h2>
               <p className="text-lg text-slate-100 mb-8 max-w-2xl mx-auto">Start your emotional journey today with MoodBoard</p>
               <button
-                onClick={() => setShowWebcam(true)}
+                onClick={() => {
+                  setShowManualAdd(true);
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
                 className="inline-flex items-center gap-2 px-8 py-4 bg-white text-slate-900 hover:bg-slate-100 rounded-lg font-bold text-lg transition-all transform hover:scale-105"
               >
                 Get Started
