@@ -86,6 +86,7 @@ const reviews = [
 export default function Home() {
   const [showWebcam, setShowWebcam] = useState(false)
   const [showManualAdd, setShowManualAdd] = useState(false)
+
   const [capturedImage, setCapturedImage] = useState(null)
   const [detectedMood, setDetectedMood] = useState(null)
   const [showSongBtn, setShowSongBtn] = useState(false)
@@ -140,6 +141,8 @@ export default function Home() {
       }
     }
   }, [showWebcam])
+
+
 
   const saveMood = async (moodToSave) => {
     let idToSend = null
@@ -308,11 +311,11 @@ export default function Home() {
             <p className="text-xl text-slate-300 mb-8 max-w-2xl mx-auto leading-relaxed">
               Capture your mood, understand your emotions, and get personalized recommendations for your mental wellbeing
             </p>
-            <div className="flex flex-col sm:flex-row justify-center gap-4">
+            <div className="flex flex-col sm:flex-row justify-center gap-4 flex-wrap">
               <button
                 onClick={() => {
                   setShowWebcam(!showWebcam)
-                  if (!showWebcam) setShowManualAdd(false)
+                  if (!showWebcam) { setShowManualAdd(false); }
                 }}
                 className={`inline-flex items-center justify-center gap-2 px-8 py-4 rounded-lg font-bold text-lg transition-all duration-300 transform hover:scale-105 shadow-lg ${
                   showWebcam 
@@ -328,7 +331,7 @@ export default function Home() {
               <button
                 onClick={() => {
                   setShowManualAdd(!showManualAdd)
-                  if (!showManualAdd) setShowWebcam(false)
+                  if (!showManualAdd) { setShowWebcam(false); }
                 }}
                 className={`inline-flex items-center justify-center gap-2 px-8 py-4 rounded-lg font-bold text-lg transition-all duration-300 transform hover:scale-105 shadow-lg ${
                   showManualAdd 
@@ -340,6 +343,7 @@ export default function Home() {
                 {showManualAdd ? "Close Manual" : "Add Manually"}
                 <ArrowRight className="w-5 h-5" />
               </button>
+
             </div>
           </div>
 
@@ -359,7 +363,7 @@ export default function Home() {
                   </select>
                 </div>
 
-                {showWebcam ? (
+                {showWebcam && (
                   capturedImage ? (
                     <div className="space-y-6">
                       <div className="relative rounded-xl overflow-hidden shadow-xl">
@@ -418,7 +422,9 @@ export default function Home() {
                       </button>
                     </div>
                   )
-                ) : (
+                )}
+
+                {showManualAdd && (
                   <div className="space-y-6">
                     <h3 className="text-xl font-bold text-center">How are you feeling right now?</h3>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -438,6 +444,8 @@ export default function Home() {
                     </div>
                   </div>
                 )}
+
+
 
                 {detectedMood && renderActionButtons()}
 
