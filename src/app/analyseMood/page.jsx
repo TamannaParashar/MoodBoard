@@ -1,17 +1,16 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
-import { Doughnut } from "react-chartjs-2"
-import { Chart as ChartJS, ArcElement, Tooltip, Legend } from "chart.js"
+import MoodGalaxy from "./MoodGalaxy"
 import { toast, Toaster } from "sonner"
 import { useRouter } from "next/navigation"
 import { X, Heart, Users, Shield, TrendingUp, Send, ArrowRight, Trash2, Edit2, Check } from "lucide-react"
 
-ChartJS.register(ArcElement, Tooltip, Legend)
 
 export default function AnalyseMood() {
   const [userId, setUserId] = useState("")
   const [moodData, setMoodData] = useState(null)
+  const [rawHistory, setRawHistory] = useState([])
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
   const [lifeLong, setLifeLong] = useState(false)
@@ -76,6 +75,7 @@ export default function AnalyseMood() {
         return
       }
       setMoodData(data.moodCounts)
+      setRawHistory(data.rawHistory || [])
       const moodMessage = {
         happy: `You deserve to be happy 😇. Stay joyful!`,
         sad: `It seems you've had a heavy few days. You've shown strength by checking in.`,
@@ -675,61 +675,9 @@ export default function AnalyseMood() {
         {/* Charts & Stats */}
         {moodData && (
           <div className="space-y-8">
-            {/* Doughnut Chart */}
-            <div className="bg-gradient-to-br from-slate-800/50 to-slate-900/50 backdrop-blur-xl border border-slate-700/50 rounded-2xl p-8 shadow-2xl">
-              <h2 className="text-2xl font-bold mb-8 text-center">Your Mood Distribution</h2>
-              <div className="flex justify-center">
-                <div className="w-full sm:w-96 h-96">
-                  <Doughnut
-                    data={{
-                      labels: Object.keys(moodData),
-                      datasets: [
-                        {
-                          data: Object.values(moodData),
-                          backgroundColor: moodColors,
-                          borderColor: "#1e293b",
-                          borderWidth: 3,
-                          hoverBorderColor: "#ffffff",
-                          hoverBorderWidth: 4,
-                        },
-                      ],
-                    }}
-                    options={{
-                      responsive: true,
-                      maintainAspectRatio: true,
-                      plugins: {
-                        legend: {
-                          position: "bottom",
-                          labels: {
-                            color: "#cbd5e1",
-                            font: { size: 13, weight: "600" },
-                            padding: 20,
-                            usePointStyle: true,
-                            pointStyle: "circle",
-                          },
-                        },
-                        tooltip: {
-                          backgroundColor: "rgba(0, 0, 0, 0.8)",
-                          titleColor: "#fff",
-                          bodyColor: "#e2e8f0",
-                          borderColor: "#475569",
-                          borderWidth: 1,
-                          padding: 12,
-                          displayColors: true,
-                          callbacks: {
-                            label: (context) => {
-                              const label = context.label || ""
-                              const value = context.parsed || 0
-                              const percentage = ((value / totalMoods) * 100).toFixed(1)
-                              return ` ${label}: ${value} (${percentage}%)`
-                            },
-                          },
-                        },
-                      },
-                    }}
-                  />
-                </div>
-              </div>
+            {/* 3D Galaxy Chart */}
+            <div className="w-full h-[500px] mb-8">
+              <MoodGalaxy rawHistory={rawHistory} />
             </div>
 
             {/* Stats Cards */}

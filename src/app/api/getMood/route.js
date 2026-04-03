@@ -26,5 +26,5 @@ export async function GET(req){
         maxMood = mood;
       }
     }
-    return new Response(JSON.stringify({moodCounts,maxMood,maxCount}),{status:200,headers:{"Content-Type":"application/json"}});
+    return new Response(JSON.stringify({moodCounts,maxMood,maxCount,rawHistory: data}),{status:200,headers:{"Content-Type":"application/json"}});
 }
