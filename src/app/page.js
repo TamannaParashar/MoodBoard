@@ -251,6 +251,12 @@ export default function Home() {
           >
             Motivation Room (AI Story)
           </button>
+          <button
+            onClick={() => router.push('/zen')}
+             className={`group md:col-span-2 px-4 py-4 bg-gradient-to-r from-blue-600/20 to-indigo-600/20 hover:from-blue-600/40 hover:to-indigo-600/40 border border-blue-500/30 hover:border-blue-400/60 rounded-xl font-bold text-white transition-all transform hover:scale-[1.02] flex items-center justify-center shadow-lg hover:shadow-blue-500/20 ${['angry', 'sad', 'fearful', 'disgusted'].includes(detectedMood) ? 'shadow-[0_0_15px_rgba(59,130,246,0.5)] border-blue-400' : ''}`}
+          >
+            Enter Zen Room (Immersive)
+          </button>
         </div>
       )}
     </div>
