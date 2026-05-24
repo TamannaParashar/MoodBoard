@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { ArrowLeft, ChevronLeft, ChevronRight, Loader2, Sparkles, Wand2 } from "lucide-react";
 
-export default function MotivationRoom() {
+function MotivationRoomContent() {
   const searchParams = useSearchParams();
   const mood = searchParams.get("mood") || "neutral";
   const router = useRouter();
@@ -185,5 +185,18 @@ export default function MotivationRoom() {
         ) : null}
       </div>
     </main>
+  );
+}
+
+export default function MotivationRoom() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-slate-950 text-white flex items-center justify-center flex-col">
+        <Loader2 className="w-10 h-10 text-blue-500 animate-spin mb-4" />
+        <p className="text-slate-400 font-semibold text-sm">Opening Motivation Room...</p>
+      </div>
+    }>
+      <MotivationRoomContent />
+    </Suspense>
   );
 }
