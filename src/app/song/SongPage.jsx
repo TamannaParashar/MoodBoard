@@ -163,48 +163,36 @@ export default function SongPage() {
   };
 
   return (
-    <div className={`min-h-screen bg-gradient-to-br ${theme.pageBg} text-white relative overflow-hidden flex flex-col`}>
-      {/* Background glow effects */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
-        <div className={`absolute top-0 left-1/4 w-96 h-96 bg-gradient-to-br ${theme.gradientFrom} rounded-full blur-3xl animate-pulse`}></div>
-        <div className={`absolute bottom-10 right-1/4 w-96 h-96 bg-gradient-to-br ${theme.gradientTo} rounded-full blur-3xl animate-pulse`} style={{ animationDelay: "3s" }}></div>
-      </div>
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white relative overflow-hidden flex flex-col pt-16 md:pt-20">
+      {/* Ambient background blobs matching quotes page style */}
+      <div className="fixed -top-40 -right-28 w-[520px] h-[520px] rounded-full blur-[100px] pointer-events-none z-0 animate-[pulse_14s_ease-in-out_infinite_alternate]" style={{ background: theme.gradientFrom.replace("0.15", "0.25").replace("0.3", "0.25") }} />
+      <div className="fixed -bottom-36 -left-24 w-[440px] h-[440px] rounded-full blur-[100px] pointer-events-none z-0 animate-[pulse_16s_ease-in-out_infinite_alternate-reverse]" style={{ background: theme.gradientTo.replace("0.15", "0.25").replace("0.2", "0.25") }} />
 
-      {/* Header */}
-      <header className="relative z-10 bg-slate-950/40 backdrop-blur-md border-b border-slate-800/50 p-4">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <button 
-            onClick={() => router.push("/")}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 border border-white/15 hover:bg-white/10 text-slate-300 hover:text-white transition-all text-sm font-semibold"
+      {/* Nav bar — same as quotes page */}
+      <nav className="fixed top-0 w-full z-40 bg-gradient-to-b from-slate-950/85 to-transparent backdrop-blur-md border-b border-slate-800/10">
+        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+          <a href="/" className="text-xl font-bold tracking-widest uppercase bg-gradient-to-r from-purple-400 via-pink-500 to-rose-400 bg-clip-text text-transparent">
+            MoodBoard
+          </a>
+          <a
+            href="/"
+            className="flex items-center gap-1.5 px-4 py-2 rounded-lg border border-slate-800 bg-slate-900/40 hover:bg-slate-900/80 hover:border-slate-700 text-slate-400 hover:text-white transition-all text-xs font-semibold tracking-wider"
           >
-            <ArrowLeft className="w-4 h-4" />
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M19 12H5M5 12l7-7M5 12l7 7" />
+            </svg>
             Back
-          </button>
-          
-          <div className="flex items-center gap-2">
-            <span className="text-xl font-bold bg-gradient-to-r from-purple-400 to-pink-500 bg-clip-text text-transparent">
-              MoodBoard
-            </span>
-          </div>
-
-          <div className="flex items-center gap-2 px-4 py-1.5 bg-slate-900/80 rounded-full border border-slate-700/60">
-            <Music className="w-4 h-4 text-purple-400" />
-            <span className="text-xs font-bold tracking-wider uppercase text-slate-400">Song Room</span>
-          </div>
+          </a>
         </div>
-      </header>
+      </nav>
 
       {/* Main Content Area */}
-      <main className="flex-1 relative z-10 w-full max-w-7xl mx-auto px-6 py-12 flex flex-col">
+      <main className="flex-1 relative z-10 w-full max-w-7xl mx-auto px-6 pt-6 pb-12 flex flex-col">
         
         {/* Editorial Heading Section */}
         <div className="mb-12 text-center max-w-2xl mx-auto">
-          <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full border text-xs font-semibold capitalize mb-4 ${theme.bgPill}`}>
-            <Sparkles className="w-3.5 h-3.5" />
-            Vibe: {theme.label}
-          </div>
           <h1 className="text-4xl md:text-5xl font-black tracking-tight leading-none mb-4">
-            Emotions set to <span className={`bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent`}>Music</span>
+            Music heals what words cannot <span className={`bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent`}>Touch</span>
           </h1>
           <p className="text-slate-400 text-sm md:text-base">
             {theme.tagline}
@@ -214,9 +202,6 @@ export default function SongPage() {
         {/* Action Controls & Select Language */}
         <div className="mb-12 flex flex-col sm:flex-row items-center justify-between gap-4 p-6 bg-slate-900/40 backdrop-blur-xl border border-slate-800/80 rounded-2xl">
           <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-400">
-              <Languages className="w-5 h-5" />
-            </div>
             <div>
               <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider">Language Preference</p>
               <p className="text-sm font-bold text-white capitalize">{language} Audio</p>
