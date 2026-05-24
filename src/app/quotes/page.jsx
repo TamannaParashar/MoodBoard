@@ -1,9 +1,11 @@
 "use client";
+import { Suspense } from "react";
 import QuotePage from "./QuotesPage";
-
 
 export default function Page() {
   return (
-      <QuotePage/>
+    <Suspense fallback={null}>
+      <QuotePage />
+    </Suspense>
   );
 }
