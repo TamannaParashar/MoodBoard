@@ -95,7 +95,37 @@ export default function Home() {
 
   const videoRef = useRef(null)
   const canvasRef = useRef(null)
+  const analysisSectionRef = useRef(null)
   const router = useRouter()
+
+  // Typewriter Animation Logic for Hero Headline
+  const words = ["Emotions", "Moods", "Feelings", "Vibes"]
+  const [currentWordIdx, setCurrentWordIdx] = useState(0)
+  const [currentText, setCurrentText] = useState("")
+  const [isDeleting, setIsDeleting] = useState(false)
+
+  useEffect(() => {
+    let timer
+    const word = words[currentWordIdx]
+    const typingSpeed = isDeleting ? 60 : 120
+
+    if (!isDeleting && currentText === word) {
+      timer = setTimeout(() => setIsDeleting(true), 2500)
+    } else if (isDeleting && currentText === "") {
+      setIsDeleting(false)
+      setCurrentWordIdx((prev) => (prev + 1) % words.length)
+    } else {
+      timer = setTimeout(() => {
+        setCurrentText(
+          isDeleting
+            ? word.substring(0, currentText.length - 1)
+            : word.substring(0, currentText.length + 1)
+        )
+      }, typingSpeed)
+    }
+
+    return () => clearTimeout(timer)
+  }, [currentText, isDeleting, currentWordIdx])
 
   useEffect(() => {
     const savedImage = sessionStorage.getItem("moodboard_capturedImage")
@@ -282,76 +312,113 @@ export default function Home() {
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white overflow-hidden">
-      {/* Navigation */}
-      <nav className="fixed top-0 w-full z-40 bg-gradient-to-b from-slate-950/80 to-transparent backdrop-blur-md border-b border-slate-800/50">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="text-2xl font-bold flex items-center gap-2">
-            <span className="bg-gradient-to-r from-purple-400 via-pink-400 to-red-400 bg-clip-text text-transparent">
+
+      {/* ═══════════════════════════════════════════════════
+           HERO — Full-bleed editorial, bg.png fills screen
+      ═══════════════════════════════════════════════════ */}
+      <div className="relative min-h-screen overflow-hidden">
+
+        {/* Full-bleed background image */}
+        <img
+          src="/bg.png"
+          alt="MoodBoard hero"
+          className="absolute inset-0 w-full h-full object-cover object-top"
+          style={{ filter: "brightness(0.7) saturate(0.95)" }}
+        />
+
+        {/* Dark gradient overlays for depth */}
+        <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/10 to-black/60" />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/40 via-transparent to-black/20" />
+
+        {/* Coloured glow tint */}
+        <div className="absolute inset-0 bg-gradient-to-br from-purple-900/10 via-transparent to-pink-900/10 pointer-events-none" />
+
+        {/* ── TOP — thin nav ── */}
+        <div className="relative z-30 flex items-center justify-between px-12 md:px-20 pt-12 md:pt-16">
+          <div className="flex flex-col items-center mt-6 md:mt-8">
+            <span className="text-6xl md:text-7xl font-black tracking-wider uppercase bg-gradient-to-r from-[#a855f7] to-[#ec4899] bg-clip-text text-transparent inline-block">
               MoodBoard
+            </span>
+            <span className="text-xs md:text-sm font-semibold tracking-wider text-purple-300/80 mt-2 text-center">
+              AI-based mental health companion
             </span>
           </div>
         </div>
-      </nav>
 
-      {/* Hero Section */}
-      <div className="relative pt-20 pb-20 px-6 md:px-8">
-        <div className="max-w-6xl mx-auto">
-          {/* Animated background elements */}
-          <div className="absolute inset-0 overflow-hidden pointer-events-none">
-            <div className="absolute top-20 right-10 w-72 h-72 bg-purple-500/20 rounded-full blur-3xl animate-pulse"></div>
-            <div className="absolute bottom-40 left-10 w-72 h-72 bg-blue-500/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: "1s" }}></div>
-          </div>
+        {/* ── BOTTOM-LEFT — headline + CTA ── */}
+        <div className="absolute bottom-0 left-0 right-0 z-20 px-8 md:px-14 pb-14">
+          <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-end justify-between gap-8">
 
-          <div className="relative z-10 text-center">
-            <div className="mb-6 inline-block">
-              <span className="px-4 py-2 rounded-full bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-400/30 text-sm font-semibold">
-                Understand Your Emotions Like Never Before
-              </span>
+            {/* Left: headline + description + CTA */}
+            <div className="max-w-xl">
+              <h1 className="text-5xl md:text-6xl xl:text-7xl font-bold leading-none mb-5 text-white">
+                Understand<br />
+                <span className="text-3xl md:text-4xl xl:text-5xl text-slate-300 font-medium tracking-tight">Your </span>
+                <span
+                  className="bg-gradient-to-r from-[#a855f7] via-[#ec4899] to-[#fb923c] bg-clip-text text-transparent inline-block font-black min-w-[280px]"
+                  style={{
+                    fontSize: "1.25em",
+                    lineHeight: "1.0",
+                    letterSpacing: "-0.02em"
+                  }}
+                >
+                  {currentText}
+                  <span className="animate-pulse text-purple-400 ml-1">|</span>
+                </span>
+              </h1>
+              <p className="text-sm text-white/60 leading-relaxed mb-8 max-w-sm">
+                Capture your mood, get personalized recommendations for music, quotes, and conversations tailored to how you feel.
+              </p>
+
+              <div className="flex flex-wrap gap-3">
+                <button
+                  id="hero-scan-btn"
+                  onClick={() => {
+                    const nextState = !showWebcam;
+                    setShowWebcam(nextState);
+                    if (nextState) {
+                      setShowManualAdd(false);
+                      setTimeout(() => {
+                        analysisSectionRef.current?.scrollIntoView({ behavior: 'smooth' });
+                      }, 100);
+                    }
+                  }}
+                  className="inline-flex items-center gap-2 px-7 py-3.5 rounded-full font-semibold text-sm text-white transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-purple-500/30"
+                  style={{ background: "linear-gradient(135deg, #7c3aed, #db2777)" }}
+                >
+                  <Camera className="w-4 h-4" />
+                  {showWebcam ? "Close Webcam" : "Scan My Mood"}
+                  <ArrowRight className="w-4 h-4" />
+                </button>
+                <button
+                  id="hero-manual-btn"
+                  onClick={() => {
+                    const nextState = !showManualAdd;
+                    setShowManualAdd(nextState);
+                    if (nextState) {
+                      setShowWebcam(false);
+                      setTimeout(() => {
+                        analysisSectionRef.current?.scrollIntoView({ behavior: 'smooth' });
+                      }, 100);
+                    }
+                  }}
+                  className="inline-flex items-center gap-2 px-7 py-3.5 rounded-full font-semibold text-sm text-white/80 border border-white/20 backdrop-blur-sm bg-white/5 hover:bg-white/10 transition-all duration-300 hover:scale-105"
+                >
+                  <Smile className="w-4 h-4" />
+                  {showManualAdd ? "Close" : "Pick My Mood"}
+                </button>
+              </div>
             </div>
-            <h1 className="text-6xl md:text-7xl font-bold tracking-tight mb-6">
-              Your Emotional
-              <span className="block bg-gradient-to-r from-purple-400 via-pink-400 to-red-400 bg-clip-text text-transparent">
-                Companion
-              </span>
-            </h1>
-            <p className="text-xl text-slate-300 mb-8 max-w-2xl mx-auto leading-relaxed">
-              Capture your mood, understand your emotions, and get personalized recommendations for your mental wellbeing
-            </p>
-            <div className="flex flex-col sm:flex-row justify-center gap-4 flex-wrap">
-              <button
-                onClick={() => {
-                  setShowWebcam(!showWebcam)
-                  if (!showWebcam) { setShowManualAdd(false); }
-                }}
-                className={`inline-flex items-center justify-center gap-2 px-8 py-4 rounded-lg font-bold text-lg transition-all duration-300 transform hover:scale-105 shadow-lg ${
-                  showWebcam 
-                    ? "bg-slate-800 hover:bg-slate-700 border border-slate-600 text-white" 
-                    : "bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white"
-                }`}
-              >
-                <Camera className="w-6 h-6" />
-                {showWebcam ? "Close Webcam" : "Open Webcam"}
-                <ArrowRight className="w-5 h-5" />
-              </button>
-              
-              <button
-                onClick={() => {
-                  setShowManualAdd(!showManualAdd)
-                  if (!showManualAdd) { setShowWebcam(false); }
-                }}
-                className={`inline-flex items-center justify-center gap-2 px-8 py-4 rounded-lg font-bold text-lg transition-all duration-300 transform hover:scale-105 shadow-lg ${
-                  showManualAdd 
-                    ? "bg-slate-800 hover:bg-slate-700 border border-slate-600 text-white" 
-                    : "bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white"
-                }`}
-              >
-                <Smile className="w-6 h-6" />
-                {showManualAdd ? "Close Manual" : "Add Manually"}
-                <ArrowRight className="w-5 h-5" />
-              </button>
 
-            </div>
           </div>
+        </div>
+      </div>
+
+
+      {/* Analysis Section — below hero */}
+      <div ref={analysisSectionRef} className="relative px-6 md:px-8">
+        <div className="max-w-6xl mx-auto w-full">
+
 
           {/* Analysis Section */}
           {(showWebcam || showManualAdd) && (
@@ -558,7 +625,10 @@ export default function Home() {
               <button
                 onClick={() => {
                   setShowManualAdd(true);
-                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                  setShowWebcam(false);
+                  setTimeout(() => {
+                    analysisSectionRef.current?.scrollIntoView({ behavior: 'smooth' });
+                  }, 100);
                 }}
                 className="inline-flex items-center gap-2 px-8 py-4 bg-white text-slate-900 hover:bg-slate-100 rounded-lg font-bold text-lg transition-all transform hover:scale-105"
               >
