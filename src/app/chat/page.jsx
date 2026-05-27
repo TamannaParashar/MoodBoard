@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef, Suspense } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
-import { ArrowLeft, Send, MessageCircle } from "lucide-react"
+import { ArrowLeft, Send, MessageCircle, Loader2 } from "lucide-react"
 import io from "socket.io-client"
 
 function ChatContent() {
