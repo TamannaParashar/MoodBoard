@@ -4,7 +4,8 @@ import { useState, useEffect, useRef } from "react"
 import MoodGalaxy from "./MoodGalaxy"
 import { toast, Toaster } from "sonner"
 import { useRouter } from "next/navigation"
-import { X, Heart, Users, Shield, TrendingUp, Send, ArrowRight, Trash2, Edit2, Check } from "lucide-react"
+import { X, Heart, Users, Shield, TrendingUp, Send, ArrowRight, Trash2, Edit2, Check, HeartHandshake } from "lucide-react"
+import { useRouter as useNextRouter } from "next/navigation"
 
 
 export default function AnalyseMood() {
@@ -26,8 +27,11 @@ export default function AnalyseMood() {
   const [hasSearchedConnections, setHasSearchedConnections] = useState(false)
   const [editingConnectionId, setEditingConnectionId] = useState(null)
   const [editName, setEditName] = useState("")
+  const [showCounselorBanner, setShowCounselorBanner] = useState(false)
+  const [bannerMoodPattern, setBannerMoodPattern] = useState([])
 
   const router = useRouter()
+  const nextRouter = useNextRouter()
 
   const fetchMyConnections = async () => {
     if (!connectionsUserId.trim()) {
@@ -204,6 +208,20 @@ export default function AnalyseMood() {
     localStorage.setItem("userId", userId)
     await fetchMoodData()
     await fetchConnectionsMoods()
+
+    // Check if mood has been consistently low → recommend counselor
+    try {
+      const threshRes = await fetch(`/api/checkMoodThreshold?userId=${userId}`)
+      const threshData = await threshRes.json()
+      if (threshData.thresholdMet) {
+        setShowCounselorBanner(true)
+        setBannerMoodPattern(threshData.recentPattern || [])
+      } else {
+        setShowCounselorBanner(false)
+      }
+    } catch (err) {
+      console.error("Threshold check failed:", err)
+    }
   }
 
   const handleKeyPress = (e) => {
@@ -669,6 +687,29 @@ export default function AnalyseMood() {
           <div className="mb-12 p-6 bg-red-500/20 border border-red-500/50 rounded-2xl text-red-200 flex items-start gap-3">
             <div className="text-2xl">⚠️</div>
             <p>{error}</p>
+          </div>
+        )}
+
+        {/* Counselor recommendation banner */}
+        {showCounselorBanner && (
+          <div className="mb-8 px-6 py-5 bg-gradient-to-r from-purple-500/10 to-pink-500/10 border border-purple-500/30 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center gap-4">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-600 to-pink-600 flex items-center justify-center flex-shrink-0">
+              <HeartHandshake className="w-6 h-6 text-white" />
+            </div>
+            <div className="flex-1">
+              <p className="font-bold text-white mb-1">Your mood has been heavy for a while</p>
+              <p className="text-slate-400 text-sm">
+                It looks like things have been difficult lately. Talking to a counselor — anonymously and
+                privately — can genuinely help.
+              </p>
+            </div>
+            <button
+              onClick={() => nextRouter.push(`/counselors?mood=${bannerMoodPattern[0] || "sad"}&pattern=${bannerMoodPattern.join(",")}`)}
+              className="flex-shrink-0 px-5 py-2.5 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 rounded-xl font-semibold text-sm transition-all hover:scale-105 flex items-center gap-2 whitespace-nowrap"
+            >
+              <HeartHandshake className="w-4 h-4" />
+              Talk to a Counselor
+            </button>
           </div>
         )}
 
