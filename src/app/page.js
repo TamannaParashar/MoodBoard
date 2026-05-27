@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
-import { Camera, X, Star, ArrowRight, Zap, Shield, Sparkles, Heart, Smile } from "lucide-react"
+import { Camera, X, Star, ArrowRight, Zap, Shield, Sparkles, Heart, Smile, HeartHandshake } from "lucide-react"
 import * as faceapi from "face-api.js"
 import "./style.css"
 import { useRouter } from "next/navigation"
@@ -91,6 +91,7 @@ export default function Home() {
   const [detectedMood, setDetectedMood] = useState(null)
   const [showSongBtn, setShowSongBtn] = useState(false)
   const [traceOption, setTraceOption] = useState("dontTrace")
+  const [moodPattern, setMoodPattern] = useState([])
   const [hoveredCard, setHoveredCard] = useState(null)
 
   const videoRef = useRef(null)
@@ -103,6 +104,19 @@ export default function Home() {
   const [currentWordIdx, setCurrentWordIdx] = useState(0)
   const [currentText, setCurrentText] = useState("")
   const [isDeleting, setIsDeleting] = useState(false)
+
+  const checkThreshold = async (userId) => {
+    if (!userId) return
+    try {
+      const res = await fetch(`/api/checkMoodThreshold?userId=${userId}`)
+      const data = await res.json()
+      if (data.recentPattern) {
+        setMoodPattern(data.recentPattern)
+      }
+    } catch (err) {
+      console.error("Error checking threshold:", err)
+    }
+  }
 
   useEffect(() => {
     let timer
@@ -135,6 +149,10 @@ export default function Home() {
       setDetectedMood(savedMood)
       setShowWebcam(true)
       setShowSongBtn(true)
+    }
+    const storedUserId = localStorage.getItem("userId")
+    if (storedUserId) {
+      checkThreshold(storedUserId)
     }
   }, [])
 
@@ -193,6 +211,11 @@ export default function Home() {
       body: JSON.stringify(toSend)
     })
     await data.json()
+
+    const currentUserId = idToSend || localStorage.getItem("userId")
+    if (currentUserId) {
+      await checkThreshold(currentUserId)
+    }
   }
 
   const handleManualMoodSelect = async (mood) => {
@@ -286,6 +309,28 @@ export default function Home() {
              className={`group md:col-span-2 px-4 py-4 bg-gradient-to-r from-blue-600/20 to-indigo-600/20 hover:from-blue-600/40 hover:to-indigo-600/40 border border-blue-500/30 hover:border-blue-400/60 rounded-xl font-bold text-white transition-all transform hover:scale-[1.02] flex items-center justify-center shadow-lg hover:shadow-blue-500/20 ${['angry', 'sad', 'fearful', 'disgusted'].includes(detectedMood) ? 'shadow-[0_0_15px_rgba(59,130,246,0.5)] border-blue-400' : ''}`}
           >
             Enter Zen Room (Immersive)
+          </button>
+        </div>
+      )}
+
+      {['sad', 'fearful', 'angry', 'disgusted'].includes(detectedMood) && (typeof window !== 'undefined' && localStorage.getItem("userId")) && (
+        <div className="mt-6 p-4 bg-slate-900/60 border border-purple-500/30 hover:border-purple-500/50 rounded-xl transition-all flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <HeartHandshake className="w-6 h-6 text-purple-400 flex-shrink-0" />
+            <div className="text-left">
+              <p className="font-semibold text-slate-200">Would you like to talk to a professional about this?</p>
+              <p className="text-slate-400 text-xs">Connect anonymously with one of our counselors.</p>
+            </div>
+          </div>
+          <button
+            onClick={() => {
+              const patternParam = moodPattern.length > 0 ? `&pattern=${moodPattern.join(",")}` : ""
+              router.push(`/counselors?mood=${detectedMood}${patternParam}`)
+            }}
+            className="w-full sm:w-auto px-5 py-2.5 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 rounded-lg text-sm font-bold text-white transition-all transform hover:scale-105 flex items-center justify-center gap-2 shadow-md"
+          >
+            Talk to a Counselor
+            <ArrowRight className="w-4 h-4" />
           </button>
         </div>
       )}
