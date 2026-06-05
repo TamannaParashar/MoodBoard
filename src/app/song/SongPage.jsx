@@ -171,7 +171,7 @@ export default function SongPage() {
       {/* Nav bar — same as quotes page */}
       <nav className="fixed top-0 w-full z-40 bg-gradient-to-b from-slate-950/85 to-transparent backdrop-blur-md border-b border-slate-800/10">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <a href="/" className="text-xl font-bold tracking-widest uppercase bg-gradient-to-r from-purple-400 via-pink-500 to-rose-400 bg-clip-text text-transparent">
+          <a href="/" className="text-2xl font-bold tracking-widest uppercase bg-gradient-to-r from-purple-400 via-pink-500 to-rose-400 bg-clip-text text-transparent">
             MoodBoard
           </a>
           <a

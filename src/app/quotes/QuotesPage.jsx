@@ -196,7 +196,7 @@ export default function QuotePage() {
       <nav className={styles.nav}>
         <div className={styles.navInner}>
           <a href="/" className={styles.navLogo}>
-            <span className={styles.logoGradient}>MoodBoard</span>
+            <span className={styles.logoGradient} style={{ textTransform: "uppercase", letterSpacing: "0.15em" }}>MOODBOARD</span>
           </a>
           <a href="/" className={styles.backBtn}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
