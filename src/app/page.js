@@ -144,11 +144,15 @@ export default function Home() {
   useEffect(() => {
     const savedImage = sessionStorage.getItem("moodboard_capturedImage")
     const savedMood = sessionStorage.getItem("moodboard_detectedMood")
-    if (savedImage && savedMood) {
-      setCapturedImage(savedImage)
+    if (savedMood) {
       setDetectedMood(savedMood)
-      setShowWebcam(true)
       setShowSongBtn(true)
+      if (savedImage) {
+        setCapturedImage(savedImage)
+        setShowWebcam(true)
+      } else {
+        setShowManualAdd(true)
+      }
     }
     const storedUserId = localStorage.getItem("userId")
     if (storedUserId) {
