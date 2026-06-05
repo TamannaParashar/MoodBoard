@@ -198,30 +198,37 @@ function CounselorsInner() {
   }, [mood])
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white">
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white pt-24 pb-12">
       {/* Ambient */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-20 left-1/4 w-80 h-80 bg-purple-600/8 rounded-full blur-3xl" />
         <div className="absolute bottom-20 right-1/4 w-80 h-80 bg-pink-600/8 rounded-full blur-3xl" />
       </div>
 
-      {/* Header */}
-      <header className="relative z-10 sticky top-0 bg-slate-950/80 backdrop-blur border-b border-slate-800/60">
-        <div className="max-w-4xl mx-auto px-6 py-4 flex items-center gap-4">
-          <button
-            onClick={() => router.back()}
-            className="p-2 rounded-lg border border-slate-700 hover:border-slate-600 text-slate-400 hover:text-white transition-all"
-          >
-            <ArrowLeft className="w-4 h-4" />
-          </button>
-          <div>
-            <h1 className="font-bold text-lg">Talk to a Counselor</h1>
-            <p className="text-xs text-slate-500">Anonymous • Secure • No sign-up needed</p>
+      {/* Nav bar */}
+      <nav className="fixed top-0 w-full z-45 bg-gradient-to-b from-slate-950/85 to-transparent backdrop-blur-md border-b border-slate-800/10">
+        <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+          <a href="/" className="text-2xl font-bold tracking-widest uppercase bg-gradient-to-r from-purple-400 via-pink-500 to-rose-400 bg-clip-text text-transparent">
+            MoodBoard
+          </a>
+          
+          <div className="flex items-center gap-4">
+            <div className="text-right hidden sm:block">
+              <h1 className="font-bold text-sm text-white">Talk to a Counselor</h1>
+              <p className="text-[10px] text-slate-500">Anonymous • Secure • No sign-up</p>
+            </div>
+            <button
+              onClick={() => router.back()}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-800 bg-slate-900/40 hover:bg-slate-900/80 hover:border-slate-700 text-slate-400 hover:text-white transition-all text-xs font-semibold"
+            >
+              <ArrowLeft className="w-3.5 h-3.5" />
+              Back
+            </button>
           </div>
         </div>
-      </header>
+      </nav>
 
-      <div className="max-w-4xl mx-auto px-6 py-10 relative z-10">
+      <div className="max-w-6xl mx-auto px-6 py-6 relative z-10">
         {/* Mood context banner */}
         {moodMeta && (
           <div className={`mb-8 px-5 py-4 rounded-xl border ${moodMeta.bg} flex items-center gap-3`}>
@@ -248,7 +255,7 @@ function CounselorsInner() {
                 <h2 className="text-sm font-bold uppercase tracking-widest text-purple-400 mb-4">
                   Recommended for You
                 </h2>
-                <div className="grid gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {recommended.map((c) => (
                     <CounselorCard key={c._id} counselor={c} mood={mood} onSelect={setSelected} />
                   ))}
@@ -262,7 +269,7 @@ function CounselorsInner() {
                 <h2 className="text-sm font-bold uppercase tracking-widest text-slate-500 mb-4">
                   Other Available Counselors
                 </h2>
-                <div className="grid gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {others.map((c) => (
                     <CounselorCard key={c._id} counselor={c} mood={mood} onSelect={setSelected} />
                   ))}
