@@ -44,47 +44,51 @@ function LoginScreen({ onLogin }) {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white flex items-center justify-center p-6">
-      <div className="w-full max-w-sm">
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white flex items-center justify-center p-6 relative overflow-hidden">
+      {/* Background ambient blobs to match design system */}
+      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-purple-600/10 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-pink-600/10 rounded-full blur-3xl pointer-events-none" />
+
+      <div className="w-full max-w-md md:max-w-lg transition-all z-10">
         <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-gradient-to-br from-purple-600 to-pink-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-xl">
-            <HeartHandshake className="w-8 h-8 text-white" />
+          <div className="w-20 h-20 bg-gradient-to-br from-purple-600 to-pink-600 rounded-3xl flex items-center justify-center mx-auto mb-4 shadow-xl shadow-purple-500/10">
+            <HeartHandshake className="w-10 h-10 text-white" />
           </div>
-          <h1 className="text-2xl font-bold">Counselor Portal</h1>
-          <p className="text-slate-400 text-sm mt-1">MoodBoard Professional Access</p>
+          <h1 className="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-purple-400 via-pink-400 to-rose-400 bg-clip-text text-transparent">Counselor Portal</h1>
+          <p className="text-slate-400 text-sm mt-2 font-semibold">MoodBoard Professional Access</p>
         </div>
 
-        <div className="bg-slate-800/50 border border-slate-700 rounded-2xl p-6 space-y-4">
+        <div className="bg-slate-800/40 border border-slate-700/60 rounded-3xl p-8 md:p-10 space-y-6 shadow-2xl backdrop-blur-xl">
           <div>
-            <label className="block text-sm font-semibold text-slate-300 mb-2">Your ID (slug)</label>
+            <label className="block text-sm font-bold text-slate-300 mb-2.5">Your ID (slug)</label>
             <input
               type="text"
               value={slug}
               onChange={(e) => setSlug(e.target.value)}
               placeholder="e.g. priya-sharma"
-              className="w-full px-4 py-3 rounded-xl bg-slate-900/50 border border-slate-700 text-white placeholder-slate-500 focus:outline-none focus:border-purple-500 text-sm"
+              className="w-full px-4 py-3.5 rounded-xl bg-slate-900/60 border border-slate-700/60 text-white placeholder-slate-500 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 text-sm transition-all"
             />
           </div>
           <div>
-            <label className="block text-sm font-semibold text-slate-300 mb-2">Password</label>
+            <label className="block text-sm font-bold text-slate-300 mb-2.5">Password</label>
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleLogin()}
               placeholder="••••••••"
-              className="w-full px-4 py-3 rounded-xl bg-slate-900/50 border border-slate-700 text-white placeholder-slate-500 focus:outline-none focus:border-purple-500 text-sm"
+              className="w-full px-4 py-3.5 rounded-xl bg-slate-900/60 border border-slate-700/60 text-white placeholder-slate-500 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 text-sm transition-all"
             />
           </div>
           {error && (
-            <p className="text-red-400 text-sm bg-red-500/10 border border-red-500/20 rounded-lg px-4 py-2">
+            <p className="text-red-400 text-sm bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3 font-semibold">
               {error}
             </p>
           )}
           <button
             onClick={handleLogin}
             disabled={loading || !slug || !password}
-            className="w-full py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 disabled:opacity-50 rounded-xl font-bold transition-all"
+            className="w-full py-4 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 disabled:opacity-50 rounded-xl font-bold transition-all shadow-lg hover:shadow-purple-500/20 transform hover:scale-[1.01]"
           >
             {loading ? "Signing in…" : "Sign In"}
           </button>
